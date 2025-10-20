@@ -157,6 +157,7 @@ public class JDBCManager {
 				column.setName(rs.getString("column_name"));
 				column.setDataType(rs.getString("data_type"));
 				column.setIsNullable(rs.getString("is_nullable").equals("YES"));
+				column.setLength(rs.getInt("CHARACTER_MAXIMUM_LENGTH"));
 				if (rs.getString("column_key") != null) {
 					column.setIsPrimaryKey(rs.getString("column_key").equals("PRI"));
 					column.setIsForeignKey(rs.getString("column_key").equals("MUL"));

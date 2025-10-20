@@ -9,25 +9,39 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.stream.Stream;
 
 public class FileManager {
 
 	public static void copyDir(String src, String dest, boolean overwrite) {
-		
-		try {
-			Files.walk(Paths.get(src)).forEach(a -> {
-				Path b = Paths.get(dest, a.toString().substring(src.length() - 1));
-				try {
-					if (!b.toString().equals(a.toString())) {
-						System.out.println("agregando archivo a: " + b.toString());
-						Files.copy(a, b, overwrite ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING }
-								: new CopyOption[] {});
-					}
 
-				} catch (IOException e) {
-					System.out.println("El archivo " + b + " ya existe");
-				}
-			});
+		try {
+//			Stream<Path> folderSrc = Files.walk(Paths.get(src));
+//			
+//			folderSrc.forEach(a -> {
+//				Path b = Paths.get(dest, a.toString());
+//				try {
+//					if (!b.toString().equals(a.toString())) {
+//						System.out.println("agregando archivo a: " + b.toString());
+//						Files.copy(a, b, overwrite ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING }
+//								: new CopyOption[] {});
+//					}
+//
+//				} catch (IOException e) {
+//					System.out.println("El archivo " + b + " ya existe");
+//				}
+//			});
+			
+			Files.walk(Paths.get(src))
+		      .forEach(source -> {
+		          Path destination = Paths.get(dest, source.toString()
+		            .substring(src.replace("//", "/").length()));
+		          try {
+		              Files.copy(source, destination);
+		          } catch (IOException e) {
+		              e.printStackTrace();
+		          }
+		      });
 		} catch (IOException e) {
 			// permission issue
 			e.printStackTrace();
@@ -37,7 +51,7 @@ public class FileManager {
 
 	public static void replaceTextInFilesFolder(String src, String oldText, String newText) {
 		try {
-			Files.walk(Paths.get(src))		
+			Files.walk(Paths.get(src))
 //			.filter(Files::isRegularFile)
 //			.filter(path -> (!path.toString().endsWith(".png") || !path.toString().endsWith(".jpg")
 //					|| !path.toString().endsWith(".jpeg") || !path.toString().endsWith(".svg")
@@ -46,9 +60,8 @@ public class FileManager {
 						Path path = Paths.get(a.toString());
 
 						if (path.toString().endsWith(".png") || path.toString().endsWith(".jpg")
-								|| path.toString().endsWith(".jpeg") || path.toString().endsWith(".svg")
-								) {
-							System.out.println("Este archivo es una imagen: "+path.getFileName());
+								|| path.toString().endsWith(".jpeg") || path.toString().endsWith(".svg")) {
+							System.out.println("Este archivo es una imagen: " + path.getFileName());
 
 						} else {
 							Charset charset = StandardCharsets.UTF_8;
@@ -137,6 +150,21 @@ public class FileManager {
 	public static void createFolder(String path, String folderName) {
 		File f = new File(path + "\\" + folderName);
 		f.mkdir();
+
+	}
+
+	public static void renameMultipleFilesInFolder(String src, String oldText, String newText) {
+		try {
+			Files.walk(Paths.get(src)).forEach(a -> {
+				Path path = Paths.get(a.toString());
+				String newPath = path.toString().replace(oldText, newText);
+				path.toFile().renameTo(new File(newPath));
+
+			});
+		} catch (IOException e) {
+			// permission issue
+			e.printStackTrace();
+		}
 
 	}
 

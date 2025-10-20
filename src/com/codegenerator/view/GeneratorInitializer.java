@@ -25,6 +25,7 @@ import javax.swing.border.EmptyBorder;
 
 import com.codegenerator.generator.BackEndGenerator;
 import com.codegenerator.generator.FrontEndGenerator;
+import com.codegenerator.generator.FrontEndGenerator2;
 
 
 public class GeneratorInitializer extends JDialog {
@@ -35,13 +36,13 @@ public class GeneratorInitializer extends JDialog {
 	String projectName;
 	private String projectPath;
 	
-	public GeneratorInitializer(String projectName,String projectPath, BackEndGenerator backEndGenerator, FrontEndGenerator frontEndGenerator) {
+	public GeneratorInitializer(String projectName,String projectPath, BackEndGenerator backEndGenerator, FrontEndGenerator2 frontEndGenerator) {
 		this.projectName = projectName;
 		this.projectPath = projectPath;
 		init(backEndGenerator, frontEndGenerator);
 	}
 
-	private void init(BackEndGenerator backEndGenerator, FrontEndGenerator frontEndGenerator) {
+	private void init(BackEndGenerator backEndGenerator, FrontEndGenerator2 frontEndGenerator) {
 
 		setTitle("Proceso...");
 

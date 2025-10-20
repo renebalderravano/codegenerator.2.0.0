@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.awt.event.ItemEvent;
 import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -45,6 +46,7 @@ public class ConnectionDBServerFrame extends JFrame {
 	JComboBox cbDatabase;
 	private JTable tblTables;
 	private JDBCManager c;
+	private Object[][] data = new Object[][] {};
 
 	Set<Object[]> tableSelected = new HashSet();
 
@@ -83,13 +85,13 @@ public class ConnectionDBServerFrame extends JFrame {
 					txtPort.setText(PropertiesReading.getProperty(i.getValue() + ".datasource.port"));
 					txtUsername.setText(PropertiesReading.getProperty(i.getValue() + ".datasource.username"));
 					txtPassword.setText(PropertiesReading.getProperty(i.getValue() + ".datasource.password"));
-					
+
 					List<String> dbs = new ArrayList<>();
 					dbs.add("Conectese al servidor de db.");
 					String[] array = new String[dbs.size()];
 					dbs.toArray(array); // fill the array
 					cbDatabase.setModel(new DefaultComboBoxModel(array));
-					
+
 					createTable(new ArrayList<>(), new String[] { "Tabla", "Generar" });
 				}
 			}
@@ -152,7 +154,10 @@ public class ConnectionDBServerFrame extends JFrame {
 					JOptionPane.showMessageDialog(null, "Seleccione un servidor de base de datos.");
 					return;
 				}
-				else {
+				else if (tableSelected.isEmpty()) {
+					JOptionPane.showMessageDialog(null, "Seleccione una tabla de la lista.");
+					return;
+				} else {
 					String database = cbDatabase.getSelectedItem().toString();
 					DataBaseFrame frm = new DataBaseFrame(serverDB, database, c, tableSelected);
 					frm.setVisible(true);
@@ -195,16 +200,15 @@ public class ConnectionDBServerFrame extends JFrame {
 
 				c = new JDBCManager(serverDB, host, port, username, password);
 
-				Result r = c.connect();				
-				if (r.isSuccess()) {					
+				Result r = c.connect();
+				if (r.isSuccess()) {
 					List<String> dbs = new ArrayList<>();
 					dbs.add("Seleccione...");
 					dbs.addAll(c.getDataBases());
 					String[] array = new String[dbs.size()];
 					dbs.toArray(array); // fill the array
-					cbDatabase.setModel(new DefaultComboBoxModel(array));					
-				}
-				else {
+					cbDatabase.setModel(new DefaultComboBoxModel(array));
+				} else {
 					JOptionPane.showMessageDialog(null, r.getMessage());
 				}
 			}
@@ -213,7 +217,7 @@ public class ConnectionDBServerFrame extends JFrame {
 		contentPane.add(btnTestConnection);
 
 		String[] columns = new String[] { "Tabla", "Generar" };
-		Object[][] data = new Object[][] {};
+		
 		tblTables = new JTable(data, columns);
 		tblTables.setBounds(26, 244, 372, 158);
 
@@ -224,33 +228,56 @@ public class ConnectionDBServerFrame extends JFrame {
 		cbDatabase = new JComboBox();
 		cbDatabase.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
-
 				if (e.getStateChange() == ItemEvent.SELECTED) {
-
 					List<String> tables = c.getTableFromDataBase(e.getItem().toString());
-
 					createTable(tables, columns);
-
 				}
 			}
 		});
 		cbDatabase.setBounds(130, 175, 200, 22);
 		contentPane.add(cbDatabase);
-		
-		
-		
+
+		JCheckBox selectAllCheckbox = new JCheckBox("Seleccionar todo", true);
+        selectAllCheckbox.addActionListener(e -> {
+            boolean isSelected = selectAllCheckbox.isSelected();
+            tableSelected.clear();
+            for (int i = 0; i < tblTables.getRowCount(); i++) {
+            	  tblTables.setValueAt(isSelected, i, 1);
+            	  data[i][1] = isSelected;
+            	  data[i][2] = "Cero";
+            	  if(isSelected) {
+            		  Object[] row = new Object[6];
+            			row[0] = tblTables.getValueAt(i, 0);
+            			row[1] = true;
+            			row[2] = "Cero";
+            			
+            			tableSelected.add(row);
+            	  }
+            	  
+            }
+            
+            System.out.println("Cantidad de seleccionados: " + tableSelected.size());
+            System.out.println(tableSelected);
+        });
+		selectAllCheckbox.setBounds(260, 210, 150, 20);
+		contentPane.add(selectAllCheckbox);
+
 	}
+
 	
+	boolean isInitializing = true;
 	public void createTable(List<String> rows, String[] columns) {
-		
-		Object[][] data = new Object[rows.size()][];
+
+		data = new Object[rows.size()][];
 
 		int i = 0;
 		for (String t : rows) {
-			Object[] row = new Object[2];
+			Object[] row = new Object[6];
 			row[0] = t;
-			row[1] = false;
+			row[1] = true;
+			row[2] = "Cero";
 			data[i] = row;
+			tableSelected.add(data[i]);
 			i++;
 		}
 
@@ -270,24 +297,60 @@ public class ConnectionDBServerFrame extends JFrame {
 
 		tblTables.setModel(model);
 
+		for (i = 0; i < tblTables.getRowCount(); i++) {
+			tblTables.setValueAt(true, i, 1);
+		}
+
 		TableColumnModel columnModel = tblTables.getColumnModel();
 		TableColumn column = columnModel.getColumn(1);
 		column.setCellEditor(tblTables.getDefaultEditor(Boolean.class));
 		column.setCellRenderer(tblTables.getDefaultRenderer(Boolean.class));
-		JCheckBox checkBox = new JCheckBox();
-		checkBox.addItemListener(new ItemListener() {
-			public void itemStateChanged(ItemEvent e) {
+		
 
+		JCheckBox checkBox = new JCheckBox();
+		checkBox.setSelected(true);
+		
+		checkBox.addItemListener(new ItemListener() {
+			
+			public void itemStateChanged(ItemEvent e) {
+				
 				int row = tblTables.getSelectedRow();
 				int column = tblTables.getSelectedColumn();
 
-				if (e.getStateChange() == ItemEvent.SELECTED) {
-					data[row][column] = true;
-					tableSelected.add(data[row]);
+				try {
+					
+					if(row != -1) {
+						if(data[row][2].equals("Cero")) {
+							if(((boolean) data[row][column])) {
+								tableSelected.removeIf(r -> r[0] == data[row][0] );
+								data[row][column] = false;
+							}
+							else {
+								data[row][column] = true;
+								tableSelected.add(data[row]);
+							}
+							data[row][2] = "uno";
+						}
+						else if(data[row][2].equals("uno")) {
+							data[row][2] = "Cero";
+						}	
+					}
+					
+//					if (e.getStateChange() == ItemEvent.SELECTED) {
+//						data[row][column] = true;
+//						tableSelected.add(data[row]);
+//					} else if (e.getStateChange() == ItemEvent.DESELECTED) {
+//						tableSelected.remove(data[row]);
+//						data[row][column] = false;
+//					}
+					System.out.println("Cantidad de seleccionados: " + tableSelected.size());
+				} catch (Exception e2) {
+					// TODO: handle exception
 				}
+
 			}
 		});
 		column.setCellEditor(new DefaultCellEditor(checkBox));
 	}
-	
+
 }

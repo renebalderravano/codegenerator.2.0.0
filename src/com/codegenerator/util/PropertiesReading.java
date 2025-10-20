@@ -7,7 +7,7 @@ import java.util.Properties;
 
 public class PropertiesReading {
 	
-	public static String folder_codegenerator_util = "c://codegenerator_util";
+	public static final String folder_codegenerator_util = "c://codegenerator_util_2.0.0//v2//arquitecture";
 	
 	static Properties prop = new Properties();
 	

@@ -1,5 +1,6 @@
 package com.codegenerator.generator;
 
+import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -25,13 +26,14 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 	String resourcesPath = "";
 	String databaseName;
 	String server = "";
+	String architecture = "mvc";
 
 	boolean addOAuth2;
 	
 	private int processProgress = 0;
 	
 	public FrontEndGenerator(String server, String databaseName, Set<Object[]> tables, JDBCManager jdbcManager,
-			String workspace, String projectName, String packageName, boolean addOAuth2) {
+			String workspace, String projectName, String packageName, boolean addOAuth2, String architecture) {
 		this.databaseName = databaseName;
 		this.tables = tables;
 		this.jdbcManager = jdbcManager;
@@ -42,17 +44,17 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		this.resourcesPath = workspace + "\\" + projectName + "\\src\\assets";
 		this.server = server;
 		this.addOAuth2 = addOAuth2;
+		this.architecture = architecture;
 	}
 
 	@Override
-	public Boolean generate() {
-
+	public Boolean generate() {		
 		setProcessProgress(0);
 		printLog("Generando...");
 		printLog("Creando Directorio para frontend..");
 		FileManager.createFolder(workspace, projectName);
 		setProcessProgress(30);
-		FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/FrontEnd/[projectName]",
+		FileManager.copyDir(PropertiesReading.folder_codegenerator_util + (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") +"/FrontEnd/[projectName]",
 				workspace + "\\" + projectName, true);
 
 		FileManager.replaceTextInFilesFolder(workspace + "\\" + projectName, "[projectName]", projectName);
@@ -60,6 +62,7 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		int availableTime = 50;
 		int i=30;
 		for (Object[] table : tables) {
+			
 			i+=(availableTime/(tables.size()));
 			setProcessProgress(i);
 			String tableName = (String) table[0];
@@ -94,11 +97,11 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 	public Boolean generateService(String tableName) {
 
 		String pathService = packagePath + "\\services\\" + TextUtil.convertToSnakeCase(tableName) + ".service.ts";
-
+		
 		try {
 
 			FileManager.copyDir(
-					PropertiesReading.folder_codegenerator_util + "/FrontEnd/service/[tableName].service.ts",
+					PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") +  "/FrontEnd/service/[tableName].service.ts",
 					pathService, false);
 
 			FileManager.replaceTextInFile(pathService, "[tableName]Service",
@@ -123,11 +126,10 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		/*
 		 * COMPONENT
 		 */
-
 		String componentPath = componentFolder + "\\" + TextUtil.convertToSnakeCase(tableName) + ".component.ts";
 
 		FileManager.copyDir(
-				PropertiesReading.folder_codegenerator_util + "/FrontEnd/component/[tableName].component.ts",
+				PropertiesReading.folder_codegenerator_util + (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") +  "/FrontEnd/component/[tableName].component.ts",
 				componentPath, false);
 
 		FileManager.replaceTextInFile(componentPath, "CAMEL_CASE_CAP[tableName]",
@@ -136,21 +138,62 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		FileManager.replaceTextInFile(componentPath, "CAMEL_CASE[tableName]", TextUtil.convertToCamelCase(tableName));
 
 		FileManager.replaceTextInFile(componentPath, "SNAKE_CASE[tableName]", TextUtil.convertToSnakeCase(tableName));
+		
+		
+		/*
+		 * CREATE COMPONENT
+		 */
 
+		String createComponentPath = componentFolder + "\\create." + TextUtil.convertToSnakeCase(tableName);
+		
+		FileManager.copyDir(
+				PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/component/create.[tableName]",
+				createComponentPath, false);
+		
+		
+		
+		FileManager.renameMultipleFilesInFolder(createComponentPath, "[tableName]", TextUtil.convertToSnakeCase(tableName));
+		
+		
+		createComponentPath = componentFolder + "\\create." + TextUtil.convertToSnakeCase(tableName) +"\\create." + TextUtil.convertToSnakeCase(tableName) + ".component.html";
+
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE_CAP[tableName]",
+				TextUtil.capitalizeText(TextUtil.convertToCamelCase(tableName)));
+		
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]",
+				TextUtil.convertToCamelCase(tableName));
+		
+		FileManager.replaceTextInFile(createComponentPath, "SNAKE_CASE[tableName]",
+				TextUtil.convertToSnakeCase(tableName));
+
+		createComponentPath = componentFolder + "\\create." + TextUtil.convertToSnakeCase(tableName) +"\\create." + TextUtil.convertToSnakeCase(tableName) + ".component.scss";
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]", TextUtil.convertToCamelCase(tableName));
+
+		createComponentPath = componentFolder + "\\create." + TextUtil.convertToSnakeCase(tableName) +"\\create." + TextUtil.convertToSnakeCase(tableName) + ".component.ts";
+		
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE_CAP[tableName]",
+				TextUtil.capitalizeText(TextUtil.convertToCamelCase(tableName)));
+		
+		FileManager.replaceTextInFile(createComponentPath, "SNAKE_CASE[tableName]", TextUtil.convertToSnakeCase(tableName));
+		
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]",
+				TextUtil.convertToCamelCase(tableName));
+		
+		
 		/*
 		 * SCSS
 		 */
 		String scssPath = componentFolder + "\\" + TextUtil.convertToSnakeCase(tableName) + ".component.scss";
 
 		FileManager.copyDir(
-				PropertiesReading.folder_codegenerator_util + "/FrontEnd/component/[tableName].component.scss",
+				PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/component/[tableName].component.scss",
 				scssPath, false);
 
 		/*
 		 * ROUTES
 		 */
 		String routesPath = componentFolder + "\\" + TextUtil.convertToSnakeCase(tableName) + ".routes.ts";
-		FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/FrontEnd/component/[tableName].routes.ts",
+		FileManager.copyDir(PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") +  "/FrontEnd/component/[tableName].routes.ts",
 				routesPath, false);
 
 		FileManager.replaceTextInFile(routesPath, "CAMEL_CASE_CAP[tableName]",
@@ -166,8 +209,9 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		String htmlPath = componentFolder + "\\" + TextUtil.convertToSnakeCase(tableName) + ".component.html";
 
 		FileManager.copyDir(
-				PropertiesReading.folder_codegenerator_util + "/FrontEnd/component/[tableName].component.html",
+				PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/component/[tableName].component.html",
 				htmlPath, false);
+		
 		FileManager.replaceTextInFile(htmlPath, "CAMEL_CASE_CAP[tableName]",
 				TextUtil.capitalizeText(TextUtil.convertToCamelCase(tableName)));
 
@@ -179,7 +223,6 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		String fieldRows = "";
 
 		for (Column column : columns) {
-
 			String[] partes = TextUtil.capitalizeText(TextUtil.convertToCamelCase(column.getName())).split("(?=[A-Z])");
 			String columnName = Arrays.stream(partes).collect(Collectors.joining(" "));
 			columnsTable += "\t\t\t\t\t\t\t\t<th>" + columnName + "</th>\n";
@@ -254,6 +297,12 @@ public class FrontEndGenerator implements IFrontEndGenerator {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDateTime = currentDateTime.format(formatter);
         return formattedDateTime;
+	}
+
+	@Override
+	public Boolean generateComponent(Table table) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 

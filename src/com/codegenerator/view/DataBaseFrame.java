@@ -2,10 +2,16 @@ package com.codegenerator.view;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -20,14 +26,17 @@ import javax.swing.table.DefaultTableModel;
 import com.codegenerator.connection.JDBCManager;
 import com.codegenerator.generator.BackEndGenerator;
 import com.codegenerator.generator.FrontEndGenerator;
+import com.codegenerator.generator.FrontEndGenerator2;
+import com.codegenerator.util.ComboItem;
 import com.codegenerator.util.FileManager;
+import com.codegenerator.util.PropertiesReading;
 
 public class DataBaseFrame extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
+	
 	private JTextField txtProjectName;
-
 	private JTable tblTables;
 	Set<Object[]> tables;
 	JDBCManager jdbcManager;
@@ -38,16 +47,11 @@ public class DataBaseFrame extends JFrame {
 	
 	private String server;
 	
-	/**
-	 * Create the frame.
-	 * @param databaseName 
-	 */
 	public DataBaseFrame(String server, String databaseName, JDBCManager jdbcManager, Set<Object[]> tableSelected) {
 		setTitle("Generador de código");
 		this.jdbcManager = jdbcManager;
 		this.tables = tableSelected;
 		this.databaseName = databaseName;
-		
 		this.server = server;
 		initialize();
 	}
@@ -55,7 +59,7 @@ public class DataBaseFrame extends JFrame {
 	private void initialize() {
 		
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		setBounds(450, 150, 432, 506);
+		setBounds(350, 150, 750, 506);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
@@ -96,7 +100,7 @@ public class DataBaseFrame extends JFrame {
 		lblProjectName.setBounds(23, 63, 131, 14);
 		contentPane.add(lblProjectName);
 		
-		txtProjectName = new JTextField("automatico");
+		txtProjectName = new JTextField(databaseName);
 		txtProjectName.setBounds(159, 60, 158, 20);
 		contentPane.add(txtProjectName);
 		txtProjectName.setColumns(10);
@@ -105,37 +109,69 @@ public class DataBaseFrame extends JFrame {
 		lblPaquetePrincipal.setBounds(23, 94, 126, 14);
 		contentPane.add(lblPaquetePrincipal);
 		
-		txtPaquetePrincipal = new JTextField("com.automatico");
+		txtPaquetePrincipal = new JTextField("com."+ databaseName.toLowerCase());
 		txtPaquetePrincipal.setBounds(159, 91, 158, 20);
 		contentPane.add(txtPaquetePrincipal);
 		txtPaquetePrincipal.setColumns(10);
 		
-		JCheckBox chkBackEnd = new JCheckBox("Generar Spring Boot Project");
-		chkBackEnd.setSelected(true);
-		chkBackEnd.setBounds(23, 137, 212, 23);
-		contentPane.add(chkBackEnd);
+		JLabel lblArquitectura = new JLabel("Arquitectura:");
+		lblArquitectura.setBounds(23, 137, 155, 22);
+		contentPane.add(lblArquitectura);
 		
 		JCheckBox chkAddSecurity = new JCheckBox("Agregar Spring Security Oauth");
 		chkAddSecurity.setSelected(false);
 		chkAddSecurity.setBounds(23, 169, 212, 23);
 		contentPane.add(chkAddSecurity);
+//		
+
+		JComboBox<ComboItem> cbArquitectura = new JComboBox<ComboItem>();
+		cbArquitectura.addItem(new ComboItem("MVC", "mvc"));
+		cbArquitectura.addItem(new ComboItem("Hexagonal", "hexagonal"));
+
+		cbArquitectura.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+				
+				String arquitectura = ((ComboItem) cbArquitectura.getSelectedItem()).getValue();
+				if (arquitectura.equals("hexagonal")) {
+					chkAddSecurity.setVisible(false);
+				}
+				else {
+					chkAddSecurity.setVisible(true);
+				}
+			}
+		});
+
+		cbArquitectura.setBounds(159, 137, 130, 22);
+		contentPane.add(cbArquitectura);
 		
-		JCheckBox chkFrontEnd = new JCheckBox("Generar Front-End");
-		chkFrontEnd.setBounds(23, 198, 137, 23);
-		contentPane.add(chkFrontEnd);
 		
-		String[] columns = new String[] { "Tabla", "Generar" };		
+//		JCheckBox chkBackEnd = new JCheckBox("Generar Spring Boot Project");
+//		chkBackEnd.setSelected(true);
+//		chkBackEnd.setBounds(23, 169, 212, 23);
+//		contentPane.add(chkBackEnd);
+//		
+
+//		JCheckBox chkFrontEnd = new JCheckBox("Generar Front-End");
+//		chkFrontEnd.setBounds(23, 198, 137, 23);
+//		contentPane.add(chkFrontEnd);
+		
+		String[] columns = new String[] { "Tabla", "Generar", "Generar lista", "Generar Form", "Generar form en Pop-Up"};
+		
 		Object[] d = tables.toArray();		
-		Object[][] data = new Object[d.length][];		
+		Object[][] data = new Object[d.length][columns.length];		
 		for (int i = 0; i < d.length; i++) {
 			data[i]= (Object[]) d[i];
+			data[i][2]= true;
+			data[i][3]= true;
+			data[i][4]= false;
 		}
 		
-		final Class[] columnClass = new Class[] { String.class, Boolean.class };
+		final Class[] columnClass = new Class[] { String.class, Boolean.class, Boolean.class, Boolean.class, Boolean.class   };
 		// create table model with data
 		DefaultTableModel model = new DefaultTableModel(data, columns) {
 			@Override
 			public boolean isCellEditable(int row, int column) {
+				
 				return true;
 			}
 			@Override
@@ -144,9 +180,9 @@ public class DataBaseFrame extends JFrame {
 			}
 		};
 		tblTables = new JTable(model);
-		tblTables.setBounds(0, 0, 372, 158);
+		tblTables.setBounds(0, 0, 700, 158);
 		JScrollPane jsbTable = new JScrollPane(tblTables);
-		jsbTable.setBounds(23, 239, 372, 158);
+		jsbTable.setBounds(23, 239, 700, 158);
 		contentPane.add(jsbTable);
 		
 		JButton btnRegresar = new JButton("Regresar");
@@ -174,6 +210,7 @@ public class DataBaseFrame extends JFrame {
 				workspace = workspace + "\\" + txtProjectName.getText();
 				String backendName = txtProjectName.getText()+ "Backend";
 				
+				String arquitectura = ((ComboItem) cbArquitectura.getSelectedItem()).getValue();
 				BackEndGenerator backEndGenerator = new BackEndGenerator(server,
 																		databaseName,
 																		tables, 
@@ -181,20 +218,21 @@ public class DataBaseFrame extends JFrame {
 																		workspace, 
 																		backendName, 
 																		txtPaquetePrincipal.getText(), 
-																		chkAddSecurity.isSelected());				
+																		arquitectura);				
 //				boolean isGenerated = backEndGenerator.generar();
 				
 				
 				String frontendName = txtProjectName.getText()+ "Frontend";
 				
-				FrontEndGenerator frontEndGenerator = new FrontEndGenerator(server,
+				FrontEndGenerator2 frontEndGenerator = new FrontEndGenerator2(server,
 						databaseName,
-						tables, 
+						tables,
 						jdbcManager, 
 						workspace, 
 						frontendName, 
 						txtPaquetePrincipal.getText(), 
-						chkAddSecurity.isSelected());	
+						chkAddSecurity.isSelected(),
+						arquitectura);	
 				
 				
 //				boolean isFrontGenerated = frontEndGenerator.generate();
