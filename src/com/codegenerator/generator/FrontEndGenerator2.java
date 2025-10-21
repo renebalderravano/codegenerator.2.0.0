@@ -74,7 +74,6 @@ public class FrontEndGenerator2 implements IFrontEndGenerator{
 			generateService(tableName);
 			printLog("Generando componente de la tabla " +tableName+"");
 			generateComponent(tbl);
-			
 		}
 		setProcessProgress(80);
 		printLog("Aplicando configuración");
@@ -124,7 +123,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator{
 		String componentFolder = packagePath + "\\pages\\" + FieldNameFormatter.toSnakeCase(tableName);
 
 		/*
-		 * COMPONENT LIST
+		 * COMPONENT_LIST
 		 */
 		String componentListPath = componentFolder + "\\list";
 
@@ -138,50 +137,40 @@ public class FrontEndGenerator2 implements IFrontEndGenerator{
 
 		FileManager.replaceTextInFile(componentListPath, "PASCAL_CASE[tableName]",
 				FieldNameFormatter.toPascalCase(tableName));
-		 
-
 		FileManager.replaceTextInFile(componentListPath, "CAMEL_CASE[tableName]", FieldNameFormatter.toCamelCase(tableName));
-
-		FileManager.replaceTextInFile(componentListPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));
-	
+		FileManager.replaceTextInFile(componentListPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));	
 		
 		componentListPath = componentFolder + "\\list\\" + TextUtil.convertToSnakeCase(tableName) + ".list.html";
 
 		FileManager.replaceTextInFile(componentListPath, "PASCAL_CASE_SPLIT[tableName]",
 				FieldNameFormatter.splitCamelCaseToString(tableName));
-
 		FileManager.replaceTextInFile(componentListPath, "CAMEL_CASE[tableName]", TextUtil.capitalizeText(TextUtil.convertToCamelCase(tableName)));
-
-		FileManager.replaceTextInFile(componentListPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));
-
+		FileManager.replaceTextInFile(componentListPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));		
 		FileManager.replaceTextInFile(componentListPath, "PASCAL_CASE[tableName]",
 				FieldNameFormatter.toPascalCase(tableName));
+		
 		FileManager.replaceTextInFile(componentListPath, "[tableHtml]", TemplatePrimeNG.createTable(table) );
 		
+		
 		/*
-		 * COMPONENT FORM 
+		 * COMPONENT FORM
 		 */
 
 		String createComponentPath = componentFolder + "\\form";
-		
 		FileManager.copyDir(
 				PropertiesReading.folder_codegenerator_util + "//hexagonal/FrontEnd/component/form",
-				createComponentPath, false);
-		
+				createComponentPath, false);		
 		FileManager.renameMultipleFilesInFolder(createComponentPath, "[tableName]", TextUtil.convertToSnakeCase(tableName));
 		
-		createComponentPath = componentFolder + "\\form\\" + TextUtil.convertToSnakeCase(tableName) + ".form.ts";
-		
+		createComponentPath = componentFolder + "\\form\\" + TextUtil.convertToSnakeCase(tableName) + ".form.ts";		
 		FileManager.replaceTextInFile(createComponentPath, "PASCAL_CASE[tableName]",
 				FieldNameFormatter.toPascalCase(tableName));
-
-		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]", TextUtil.convertToCamelCase(tableName));
-
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]", FieldNameFormatter.toCamelCase(tableName));
 		FileManager.replaceTextInFile(createComponentPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));
 		
 		StringBuilder builder = new StringBuilder();
 		 for (Column col : table.getColumns()) {
-			builder.append("\t\t\t"+col.getName() +": new FormControl(''),\n");
+			builder.append("\t\t\t\t"+col.getName() +": "+getFormControl(col)+",\n");
 		}
 		  
 		FileManager.replaceTextInFile(createComponentPath, "[formControls]", builder.toString());
@@ -191,22 +180,16 @@ public class FrontEndGenerator2 implements IFrontEndGenerator{
 
 		FileManager.replaceTextInFile(createComponentPath,  "PASCAL_CASE_SPLIT[tableName]",
 				FieldNameFormatter.splitCamelCaseToString(tableName));
-
-		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]", TextUtil.convertToCamelCase(tableName));
-
+		FileManager.replaceTextInFile(createComponentPath, "CAMEL_CASE[tableName]",FieldNameFormatter.toCamelCase(tableName));
 		FileManager.replaceTextInFile(createComponentPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));
 		
-		
 		FileManager.replaceTextInFile(createComponentPath, "[formHtml]", TemplatePrimeNG.createForm(table) );
-
-		
 		
 		/*
 		 * SCSS
 		 */
 //		String scssPath = componentFolder + "\\" + TextUtil.convertToSnakeCase(tableName) + ".component.scss";
 //
-//		FileManager.copyDir(
 //				PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/component/[tableName].component.scss",
 //				scssPath, false);
 
@@ -218,42 +201,56 @@ public class FrontEndGenerator2 implements IFrontEndGenerator{
 		FileManager.copyDir(PropertiesReading.folder_codegenerator_util +  "//hexagonal/FrontEnd/component/routes.ts",
 				routesPath, false);
 
-		FileManager.replaceTextInFile(routesPath, "PASCAL_CASE[tableName]",
-				FieldNameFormatter.toPascalCase(tableName));
+		FileManager.replaceTextInFile(routesPath, "PASCAL_CASE[tableName]",FieldNameFormatter.toPascalCase(tableName));
 
 		FileManager.replaceTextInFile(routesPath, "CAMEL_CASE[tableName]", FieldNameFormatter.toCamelCase(tableName));
 
 		FileManager.replaceTextInFile(routesPath, "SNAKE_CASE[tableName]", FieldNameFormatter.toSnakeCase(tableName));
 
-		/*
-		 * HTML
-		 */
-//		String htmlPath = componentFolder + "\\" + TextUtil.convertToSnakeCase(tableName) + ".component.html";
-//
-//		FileManager.copyDir(
-//				PropertiesReading.folder_codegenerator_util +  (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/component/[tableName].component.html",
-//				htmlPath, false);
-//		
-//		FileManager.replaceTextInFile(htmlPath, "CAMEL_CASE_CAP[tableName]",
-//				TextUtil.capitalizeText(TextUtil.convertToCamelCase(tableName)));
-//
-//		FileManager.replaceTextInFile(htmlPath, "CAMEL_CASE[tableName]", TextUtil.convertToCamelCase(tableName));
-//
-//		// crear columnas de la tabla
-//
-//		String columnsTable = "";
-//		String fieldRows = "";
-//
-//		for (Column column : table.getColumns()) {
-//			String[] partes = TextUtil.capitalizeText(TextUtil.convertToCamelCase(column.getName())).split("(?=[A-Z])");
-//			String columnName = Arrays.stream(partes).collect(Collectors.joining(" "));
-//			columnsTable += "\t\t\t\t\t\t\t\t<th>" + columnName + "</th>\n";
-//			fieldRows    += "\t\t\t\t\t\t\t\t<td>{{" + TextUtil.convertToCamelCase(tableName) + "."+ TextUtil.convertToCamelCase(column.getName()) + "}}</td>\n";
-//		}
-//
-//		FileManager.replaceTextInFile(htmlPath, "[columnsTable]", columnsTable);
-//		FileManager.replaceTextInFile(htmlPath, "[fields_row]", fieldRows);
 		return true;
+	}
+	
+	public String getFormControl(Column column) {
+		
+		if(column.getIsPrimaryKey())
+			return "new FormControl(undefined)";
+		
+		switch (column.getDataType()) {
+		case "int":
+		case "bigint":
+		case "smallint":
+		case "tinyint":
+		case "decimal":
+		case "numeric":
+		case "float":
+		case "real":
+			return "new FormControl(0 "+(!column.getIsNullable()? ", Validators.required":"")+")";
+		case "bit":
+			return "new FormControl(false"+(!column.getIsNullable()? ", Validators.required":"")+")";
+		case "char":
+		case "nchar":
+		case "varchar":
+		case "nvarchar":
+		case "text":
+		case "ntext":
+			return "new FormControl(''"+(!column.getIsNullable()? ", Validators.required":"")+")";
+		case "date":
+		case "datetime":
+		case "datetime2":
+		case "smalldatetime":
+		case "time":
+		case "timestamp":
+			return "new FormControl(new Date()"+(!column.getIsNullable()? ", Validators.required":"")+")";
+		
+		case "binary":
+		case "varbinary":
+		case "image":
+			return "new FormControl()";
+		default:
+			return "<!-- Tipo no reconocido: " + column.getDataType() + " -->";
+		}
+		
+		
 	}
 
 	public Boolean configurar() {

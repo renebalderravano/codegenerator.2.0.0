@@ -56,6 +56,8 @@ public class FileManager {
 //			.filter(path -> (!path.toString().endsWith(".png") || !path.toString().endsWith(".jpg")
 //					|| !path.toString().endsWith(".jpeg") || !path.toString().endsWith(".svg")
 //					))
+			
+			
 					.forEach(a -> {
 						Path path = Paths.get(a.toString());
 
@@ -142,7 +144,6 @@ public class FileManager {
 		String[] pf = packageName.split("\\.");
 		for (String fName : pf) {
 			createFolder(basePackagePath, fName);
-
 			basePackagePath = basePackagePath + "\\" + fName;
 		}
 	}
@@ -150,7 +151,6 @@ public class FileManager {
 	public static void createFolder(String path, String folderName) {
 		File f = new File(path + "\\" + folderName);
 		f.mkdir();
-
 	}
 
 	public static void renameMultipleFilesInFolder(String src, String oldText, String newText) {

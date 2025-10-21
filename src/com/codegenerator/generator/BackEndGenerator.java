@@ -192,7 +192,7 @@ public class BackEndGenerator {
 			
 			for (Object[] table : tables) {
 				String tableName = (String) table[0];
-				builder.append("auth.requestMatchers(\"/"+ FieldNameFormatter.toPascalCase(tableName)+"/**\").permitAll();");
+				builder.append("auth.requestMatchers(\"/"+ FieldNameFormatter.toPascalCase(tableName)+"/**\").permitAll();\n");
 			}
 			
 			FileManager.replaceTextInFilesFolder(
@@ -242,10 +242,8 @@ public class BackEndGenerator {
 				FileManager.copyDir(
 						PropertiesReading.folder_codegenerator_util
 								+ "/mvc/security/repository/impl/UserRepositoryImpl.java",
-
 						packagePath + "\\" + packageName.replace(".", "\\")
 								+ "\\repository\\impl\\UserRepositoryImpl.java",
-
 						false);
 
 				FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\")
@@ -294,6 +292,7 @@ public class BackEndGenerator {
 
 			String url = "jdbc:";
 			String prop = jdbcManager.getServer().trim() + ".datasource.driver-class-name";
+			
 			String driver = PropertiesReading.getProperty(prop);
 			StringBuilder urlDB = new StringBuilder(
 					PropertiesReading.getProperty(jdbcManager.getServer() + ".datasource.url.databasename"));
@@ -349,14 +348,15 @@ public class BackEndGenerator {
 				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
 						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "") + "/auth/AuthDTO.java",
 						packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", false);
+				
 				FileManager.replaceTextInFile(
-						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthDTO.java",
+						packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java",
 						"[packageName]", packageName);
 
 				FileManager.copyDir(
 						PropertiesReading.folder_codegenerator_util
-								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
-								+ "/auth/UserDetailsServiceImpl.java",
+						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+						+ "/auth/UserDetailsServiceImpl.java",
 						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
 								+ "\\UserDetailsServiceImpl.java",
 						false);
@@ -364,7 +364,6 @@ public class BackEndGenerator {
 				FileManager.replaceTextInFile(
 						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\UserDetailsServiceImpl.java",
 						"[packageName]", packageName);
-				
 			}
 
 		} catch (Exception e) {
