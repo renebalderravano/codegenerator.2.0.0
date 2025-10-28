@@ -14,10 +14,9 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-
+import java.util.stream.Collectors;
 
 import com.codegenerator.connection.JDBCManager;
 import com.codegenerator.util.Column;
@@ -27,7 +26,6 @@ import com.codegenerator.util.FileManager;
 import com.codegenerator.util.PropertiesReading;
 import com.codegenerator.util.ScriptRunner;
 import com.codegenerator.util.Table;
-
 
 public class BackEndGenerator {
 
@@ -189,16 +187,16 @@ public class BackEndGenerator {
 					packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", false);
 
 			StringBuilder builder = new StringBuilder();
-			
+
 			for (Object[] table : tables) {
 				String tableName = (String) table[0];
-				builder.append("auth.requestMatchers(\"/"+ FieldNameFormatter.toPascalCase(tableName)+"/**\").permitAll();\n");
+				builder.append("auth.requestMatchers(\"/" + FieldNameFormatter.toPascalCase(tableName)
+						+ "/**\").permitAll();\n");
 			}
-			
+
 			FileManager.replaceTextInFilesFolder(
 					packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration\\SecurityConfig.java",
-					"//requestMatchers",
-					builder.toString());
+					"//requestMatchers", builder.toString());
 
 			FileManager.replaceTextInFilesFolder(
 					packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", "[packageName]",
@@ -292,7 +290,7 @@ public class BackEndGenerator {
 
 			String url = "jdbc:";
 			String prop = jdbcManager.getServer().trim() + ".datasource.driver-class-name";
-			
+
 			String driver = PropertiesReading.getProperty(prop);
 			StringBuilder urlDB = new StringBuilder(
 					PropertiesReading.getProperty(jdbcManager.getServer() + ".datasource.url.databasename"));
@@ -323,13 +321,13 @@ public class BackEndGenerator {
 				FileManager.replaceTextInFile(
 						packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
 						"[packageName]", packageName);
-				
+
 				FileManager.copyDir(
 						PropertiesReading.folder_codegenerator_util
 								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
 								+ "/auth/AuthService.java",
 						packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java", false);
-				
+
 				FileManager.replaceTextInFile(
 						packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java",
 						"[packageName]", packageName);
@@ -340,7 +338,7 @@ public class BackEndGenerator {
 								+ "/auth/AuthServiceImpl.java",
 						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
 						false);
-				
+
 				FileManager.replaceTextInFile(
 						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
 						"[packageName]", packageName);
@@ -348,22 +346,20 @@ public class BackEndGenerator {
 				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
 						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "") + "/auth/AuthDTO.java",
 						packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", false);
-				
-				FileManager.replaceTextInFile(
-						packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java",
+
+				FileManager.replaceTextInFile(packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java",
 						"[packageName]", packageName);
 
 				FileManager.copyDir(
 						PropertiesReading.folder_codegenerator_util
-						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
-						+ "/auth/UserDetailsServiceImpl.java",
+								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+								+ "/auth/UserDetailsServiceImpl.java",
 						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
 								+ "\\UserDetailsServiceImpl.java",
 						false);
-				
-				FileManager.replaceTextInFile(
-						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\UserDetailsServiceImpl.java",
-						"[packageName]", packageName);
+
+				FileManager.replaceTextInFile(packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
+						+ "\\UserDetailsServiceImpl.java", "[packageName]", packageName);
 			}
 
 		} catch (Exception e) {
@@ -434,6 +430,13 @@ public class BackEndGenerator {
 
 				w.append("import jakarta.persistence.*;\n");
 
+				List<Column> cols = columns.stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
+
+				if (cols.size() > 0) {
+					w.append("import " + this.packageName + ".infrastructure.adapters.input.rest.dto." + formatText(tableName, true) + "DTO;\n");
+					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
+				}
+
 				w.append("@Entity\n");
 				w.append("@Table(name = \"" + tableName + "\")\n");
 				w.append("public class " + formatText(tableName, true) + "Entity { \n\n");
@@ -463,11 +466,12 @@ public class BackEndGenerator {
 							fkName = column.getName().substring(2);
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
+
 						String foreignKeyColumn = formatText(fkName, true);
 						w.append("\t@ManyToOne\n");
 						w.append("\t@JoinColumn(name = \"" + column.getName() + "\")\n");
-						w.append(
-								"\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true) + "DTO.class, srcFieldName = \""+ column.getName() + "\")\n");
+						w.append("\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
 					}
 				}
 
@@ -545,9 +549,17 @@ public class BackEndGenerator {
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
 				w.append("package " + packageNameModel + ";\n\n");
+				
+				List<Column> cols = columns.stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
+
+				if (cols.size() > 0) {
+				
+					w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + formatText(tableName, true) + "Entity;\n");
+					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
+				}
 
 				w.append("import lombok.Getter;\n");
-				w.append("import lombok.Setter;\n");
+				w.append("import lombok.Setter;\n\n");
 
 				w.append("@Getter\n");
 				w.append("@Setter\n");
@@ -555,27 +567,20 @@ public class BackEndGenerator {
 
 				// Add properties
 				for (Column column : columns) {
-					if (!column.getIsForeigKey()) {
-//						if (column.getIsPrimaryKey()) {
-//							w.append("\t@Id\n");
-//							w.append("\t@GeneratedValue(strategy= GenerationType.IDENTITY)\n");
-//						}
-////						if (column.getName().equals("housingLocation_id"))
-////							printLog("");
-//						w.append("\t@Column(name = \"" + column.getName() + "\")\n");
-						w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
-								+ formatText(column.getName(), false) + ";\n\n");
-					} else {
-
+					if (column.getIsForeigKey()) {
 						String fkName = "";
 						if (column.getName().startsWith("id"))
 							fkName = column.getName().substring(2);
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
+						
 						String foreignKeyColumn = formatText(fkName, true) + "";
-//						w.append("\t@ManyToOne\n");
-						w.append("\tprivate " + foreignKeyColumn + "Model " + formatText(fkName, false) + ";\n\n");
+						w.append("\t@MapperMapping(srcClass = "+formatText(tableName, true)+"Entity.class, srcFieldName = \""+formatText(fkName, false)+".id\")\n");
 					}
+					
+					
+					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
+							+ formatText(column.getName(), false) + ";\n\n");
 				}
 
 				// Add constructor
@@ -593,7 +598,7 @@ public class BackEndGenerator {
 
 			return false;
 		}
-
+		
 		return true;
 	}
 
@@ -617,7 +622,8 @@ public class BackEndGenerator {
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
 				w.append("package " + packageNameDTO + ";\n\n");
-
+				
+			
 				w.append("import lombok.Getter;\n");
 				w.append("import lombok.Setter;\n");
 
@@ -627,21 +633,20 @@ public class BackEndGenerator {
 
 				// Add properties
 				for (Column column : columns) {
-					if (!column.getIsForeigKey()) {
-
-						w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
-								+ formatText(column.getName(), false) + ";\n\n");
-					} else {
-
+					if (column.getIsForeigKey()) {
 						String fkName = "";
 						if (column.getName().startsWith("id"))
 							fkName = column.getName().substring(2);
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 						String foreignKeyColumn = formatText(fkName, true) + "";
-						w.append("\tprivate " + foreignKeyColumn + "DTO " + formatText(fkName, false) + ";\n\n");
+//						w.append("\t@MapperMapping(srcClass = "+foreignKeyColumn+"Model.class, srcFieldName = \"id"+foreignKeyColumn+"\")\n");
 					}
+					
+					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
+							+ formatText(column.getName(), false) + ";\n\n");
 				}
+				
 
 				// Add constructor
 
@@ -707,16 +712,13 @@ public class BackEndGenerator {
 			w.append("import " + packageNameRepository + "." + formatText(tableName, true) + "Repository;\n");
 			w.append("import " + packageName + ".util.BaseRepository;\n\n");
 			if (tableName.equalsIgnoreCase("Usuario")) {
-				w.append("import java.util.ArrayList;\r\n"
-						+ "import java.util.List;\r\n"
-						+ "import org.hibernate.Session;\n"
-						+ "import jakarta.persistence.EntityManager;\r\n"
+				w.append("import java.util.ArrayList;\r\n" + "import java.util.List;\r\n"
+						+ "import org.hibernate.Session;\n" + "import jakarta.persistence.EntityManager;\r\n"
 						+ "import jakarta.persistence.criteria.CriteriaBuilder;\r\n"
 						+ "import jakarta.persistence.criteria.CriteriaQuery;\r\n"
 						+ "import jakarta.persistence.criteria.Predicate;\r\n"
 						+ "import jakarta.persistence.criteria.Root;\n");
 			}
-			
 
 			w.append("@Repository\n");
 			w.append("public class " + formatText(tableName, true) + "RepositoryImpl extends BaseRepository<"
@@ -724,23 +726,17 @@ public class BackEndGenerator {
 					+ "Repository { \n\n");
 
 			if (tableName.equalsIgnoreCase("Usuario"))
-				w.append("	@Override\r\n"
-						+ "	public UsuarioEntity findByUserName(String userName) {\r\n"
-						+ "		\r\n"
-						+ "		Session session = this.getSf().getCurrentSession();\r\n"
+				w.append("	@Override\r\n" + "	public UsuarioEntity findByUserName(String userName) {\r\n"
+						+ "		\r\n" + "		Session session = this.getSf().getCurrentSession();\r\n"
 						+ "		EntityManager em = session.getEntityManagerFactory().createEntityManager();\r\n"
 						+ "		CriteriaBuilder cb = em.getCriteriaBuilder();\r\n"
 						+ "		CriteriaQuery<UsuarioEntity> q = cb.createQuery(UsuarioEntity.class);\r\n"
 						+ "		Root<UsuarioEntity> root = q.from(UsuarioEntity.class);		\r\n"
-						+ "	    List<Predicate> predicates = new ArrayList<>();\r\n"
-						+ "	    \r\n"
-						+ "	        predicates.add(cb.equal(root.get(\"usuario\"), userName));\r\n"
-						+ "		\r\n"
-						+ "		q.select(root).where(predicates.toArray(new Predicate[0]));\r\n"
-						+ "	\r\n"
+						+ "	    List<Predicate> predicates = new ArrayList<>();\r\n" + "	    \r\n"
+						+ "	        predicates.add(cb.equal(root.get(\"usuario\"), userName));\r\n" + "		\r\n"
+						+ "		q.select(root).where(predicates.toArray(new Predicate[0]));\r\n" + "	\r\n"
 						+ "		List<UsuarioEntity> l = em.createQuery(q).getResultList();\r\n"
-						+ "		return l.get(0);\r\n"
-						+ "	}");
+						+ "		return l.get(0);\r\n" + "	}");
 			w.append("}");
 			w.close();
 

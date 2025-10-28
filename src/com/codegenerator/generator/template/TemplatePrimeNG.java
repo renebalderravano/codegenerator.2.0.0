@@ -24,7 +24,7 @@ public class TemplatePrimeNG {
 	public static String createForm(Table table) {
 
 		Map<String, String> columnas = new LinkedHashMap();
-
+		
 		for (Column column : table.getColumns()) {
 			columnas.put(column.getName(), column.getDataType());
 		}
@@ -40,56 +40,70 @@ public class TemplatePrimeNG {
 
 	private static String generatePrimeNgForm(String tableName, List<Column> columns) {
 		StringBuilder formBuilder = new StringBuilder();
-		formBuilder.append("<div class=\"card\">\r\n" 
-				+ "    			<div class=\"card flex flex-col gap-4\">\r\n"
-				+ "        		<div class=\"font-semibold text-xl\"><h3>"
-				+ FieldNameFormatter.splitCamelCaseToString(tableName) + "</h3></div>\r\n" + "        		<hr>\n");
-		formBuilder.append("	<form [formGroup]=\"form\">\n");
+		formBuilder.append("<div class=\"card\">\n");
+		formBuilder.append( "	<h3>" + FieldNameFormatter.splitCamelCaseToString(tableName) + "</h3>\n");
+		formBuilder.append( "   <hr><p-toast />\n");
+		formBuilder.append( "   <div class=\"flex flex-col gap-4\">\r\n");
+		formBuilder.append("		<form [formGroup]=\"form\">\n");
 
+		
 		int i = 1;
 		int count = columns.size();
 		for (Column col : columns) {
+
 			String column = col.getName();
 			String type = col.getDataType().toLowerCase();
 			String label = FieldNameFormatter.splitCamelCaseToString(column);
-			
-			if(column.equals("id")) {
-				formBuilder.append("<input type=\"hidden\" name=\"id\" formControlName=\"id\">\n");
-				i=1;
+
+			if (col.getIsForeigKey()) {
+				String fkName = "";
+				if (col.getName().startsWith("id")  || col.getName().startsWith("Id"))
+					fkName = col.getName().substring(2);
+				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
+					fkName = col.getName().replace("_id", "").replace("Id", "");
+				
+//				String foreignKeyColumn = FieldNameFormatter.formatText(fkName, false);
+				column = col.getName();
+				type = "select";
+				label = FieldNameFormatter.splitCamelCaseToString(fkName);
+			}
+
+			if (column.equals("id")) {
+				formBuilder.append("		<input type=\"hidden\" name=\"id\" formControlName=\"id\">\n");
+				i = 1;
 				count -= 1;
 				continue;
 			}
-			
-			if (i == 1)
-				formBuilder.append("	<div class=\"flex flex-col md:flex-row gap-2\">\n");
 
-			formBuilder.append("		<div class=\"flex flex-col grow basis-0 gap-2\">\n");
-			formBuilder.append("    		<label for=\"" + column + "\">" + label + "</label>\n");
-			formBuilder.append("    		"+getControlHtml(type, column, col) + "\n");
-			formBuilder.append("		</div>\n");
-			if (i == 3) {
+			if (i == 1)
+				formBuilder.append("		<div class=\"flex flex-col md:flex-row gap-2\">\n");
+
+			formBuilder.append("			<div class=\"flex flex-col grow basis-0 gap-2\">\n");
+			formBuilder.append("    			<label for=\"" + column + "\">" + label + "</label>\n");
+			formBuilder.append("    			" + getControlHtml(type, column, col) + "\n");
+			formBuilder.append("			</div>\n");
+
+			if (i == 2) {
 				formBuilder.append("  	</div>\n");
-				count -= 3;
+				count -= 2;
 				i = 1;
 				continue;
 			}
 			i++;
 		}
 
-		if (count >= 1 && count < 3)
+		if (count >= 1 && count < 2)
 			formBuilder.append("  	</div>\n");
-		
-		formBuilder.append("<br> <div class=\"flex flex-wrap gap-6 \">\r\n"
+
+		formBuilder.append("		<br> <div class=\"flex flex-wrap gap-6 \">\r\n"
 				+ "            <div class=\"flex flex-col grow basis-0 gap-4 flex-end\"></div>\r\n"
 				+ "                <div class=\"flex-end\">\r\n"
-				+ "                    <p-button icon='pi pi-fw pi-arrow-left' label=\"Regresar\" severity=\"warn\" "
-				+ "						(onClick)=\"goTo"+FieldNameFormatter.toPascalCase(tableName)+"()\"\r\n"				
-				+ "                         />\r\n"
+//				+ "                    <p-button icon='pi pi-fw pi-arrow-left' label=\"Regresar\" severity=\"warn\" "
+//				+ "						(onClick)=\"goTo" + FieldNameFormatter.toPascalCase(tableName) + "()\"\r\n"
+//				+ "                         />\r\n"
 				+ "                    <p-button icon='pi pi-fw pi-save' label=\"Guardar\" severity=\"info\" (onClick)=\"save()\"\r\n"
-				+ "                         />\r\n"
-				+ "                </div>\r\n"
-				+ "        </div>\n");
-		formBuilder.append("	</form>\n"); 
+				+ "                         />\r\n" + "                </div>\r\n" + "        </div>\n");
+		formBuilder.append("	</form>\n");
 
 //		formBuilder.append("  </div>\n");
 		formBuilder.append("</div>\n");
@@ -98,9 +112,22 @@ public class TemplatePrimeNG {
 
 	private static String getControlHtml(String sqlType, String fieldName, Column column) {
 		String validator = "";
-		if(!column.getIsNullable())
-			validator = "[class.invalid]=\"form.get('"+fieldName+"')?.invalid && form.get('"+fieldName+"')?.touched\" ";
-		
+		if (!column.getIsNullable())
+			validator = "[class.invalid]=\"form.get('" + fieldName + "')?.invalid && form.get('" + fieldName
+					+ "')?.touched\" ";
+
+		if (column.getIsForeigKey()) {
+			String fkName = "";
+			if (column.getName().startsWith("id")  || column.getName().startsWith("Id"))
+				fkName = column.getName().substring(2);
+			else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
+				fkName = column.getName().replace("_id", "").replace("Id", "");
+			
+			return "<p-select [options]=\"opts" + fkName+ "\" formControlName=\""
+					+ fieldName + "\" optionValue=\"id\" optionLabel=\"nombre\"  placeholder=\"Seleccione " + fieldName
+					+ "\" class=\"w-full md:w-56\" />";
+		}
+
 		switch (column.getDataType()) {
 		case "int":
 		case "bigint":
@@ -111,20 +138,20 @@ public class TemplatePrimeNG {
 		case "float":
 		case "real":
 			return "<p-inputNumber id=\"" + fieldName + "\" formControlName=\"" + fieldName + "\" "
-					
+
 					+ validator
-					
+
 					+ "></p-inputNumber>";
 		case "bit":
-			return "<p-checkbox id=\"" + fieldName + "\" formControlName=\"" + fieldName + "\"></p-checkbox>";
+			return "<p-checkbox id=\"" + fieldName + "\" formControlName=\"" + fieldName
+					+ "\" [binary]=\"true\"></p-checkbox>";
 		case "char":
 		case "nchar":
 		case "varchar":
 		case "nvarchar":
 		case "text":
 		case "ntext":
-			return "<input pInputText id=\"" + fieldName + "\" formControlName=\"" + fieldName + "\" "
-					+ validator
+			return "<input pInputText id=\"" + fieldName + "\" formControlName=\"" + fieldName + "\" " + validator
 					+ " />";
 		case "date":
 		case "datetime":
@@ -133,17 +160,15 @@ public class TemplatePrimeNG {
 		case "time":
 		case "timestamp":
 			return "<p-datepicker id=\"" + fieldName + "\" formControlName=\"" + fieldName
-					+ "\" dateFormat=\"yy-mm-dd\" "
-					+ validator
-					+ "></p-datepicker>";
+					+ "\" dateFormat=\"yy-mm-dd\" " + validator + "></p-datepicker>";
 		case "uniqueidentifier":
-			return "<input pInputText id=\"" + fieldName + "\" formControlName=\"" + fieldName + "\" "
-					+ validator
+			return "<input pInputText id=\"" + fieldName + "\" formControlName=\"" + fieldName + "\" " + validator
 					+ "/>";
 		case "binary":
 		case "varbinary":
 		case "image":
 			return "<p-fileUpload name=\"" + fieldName + "\" url=\"uploadUrl\"></p-fileUpload>";
+
 		default:
 			return "<!-- Tipo no reconocido: " + sqlType + " -->";
 		}
@@ -176,6 +201,18 @@ public class TemplatePrimeNG {
 		html.append("    responsiveLayout=\"scroll\"\n");
 		html.append("    stripedRows\n");
 		html.append("  >\n");
+		
+		html.append("<ng-template #caption>\n");
+		html.append("	<div class=\"flex justify-between items-center flex-column sm:flex-row\">\n");
+		html.append("	<button pButton label=\"Clear\" class=\"p-button-outlined mb-2\" icon=\"pi pi-filter-slash\" (click)=\"clear(dt1)\"></button>\n");
+		html.append("    	<p-iconfield iconPosition=\"left\" class=\"ml-auto\"> \n");
+		html.append("        	<p-inputicon> \n");
+		html.append("           <i class=\"pi pi-search\"></i> \n");
+		html.append("        	</p-inputicon> \n");
+		html.append("        	<input pInputText type=\"text\" (input)=\"onGlobalFilter(dt1, $event)\" placeholder=\"Search keyword\" /> \n");
+		html.append("    	</p-iconfield> \n");
+		html.append("	</div> \n");
+		html.append("</ng-template> \n");
 
 		// Header
 		html.append("    <ng-template #header>\n");

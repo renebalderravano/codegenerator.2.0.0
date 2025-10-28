@@ -48,7 +48,13 @@ public class FieldNameFormatter {
 	
 	   public static String toCamelCase(String input) {
 	        if (input == null || input.isEmpty()) return input;
+	        
+	        if(Character.isUpperCase(input.charAt(0))) {
+	        
+	        	input = Character.toLowerCase(input.charAt(0)) + input.substring(1);
 
+	        }
+	        
 	        String[] parts = input.split("[_\\s-]+");
 	        StringBuilder camelCase = new StringBuilder();
 
@@ -68,6 +74,25 @@ public class FieldNameFormatter {
 	
 	public static String splitCamelCaseToString(String input) {
 	    return input.replaceAll("([a-z])([A-Z])", "$1 $2");
+	}
+	
+	public static String formatText(String text, boolean capitalize) {
+		String[] data = text.split("_");
+		if (data.length > 1) {
+			String aux = (capitalize ? data[0].substring(0, 1).toUpperCase() : data[0].substring(0, 1).toLowerCase())
+					+ data[0].substring(1, data[0].length());
+			for (int i = 1; i < data.length; i++) {
+				aux += data[i].substring(0, 1).toUpperCase() + data[i].substring(1, data[i].length());
+			}
+
+			text = aux;
+		} else {
+
+			text = (capitalize ? text.substring(0, 1).toUpperCase() : text.substring(0, 1).toLowerCase())
+					+ text.substring(1, text.length());
+		}
+
+		return text;
 	}
 
 }
