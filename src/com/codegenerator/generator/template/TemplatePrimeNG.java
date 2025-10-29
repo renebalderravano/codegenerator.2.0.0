@@ -1,8 +1,10 @@
 package com.codegenerator.generator.template;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.codegenerator.util.Column;
 import com.codegenerator.util.FieldNameFormatter;
@@ -186,6 +188,13 @@ public class TemplatePrimeNG {
 	}
 
 	private static String generateTable(List<Column> columns, String tableVarName) {
+		
+		String[] filters = columns.stream().map(Column::getName).toArray(String[]::new);
+		
+		String filterLst = Arrays.stream(filters)
+			    .map(filter -> "'" + filter + "'")
+			    .collect(Collectors.joining(", "));		
+		
 		StringBuilder html = new StringBuilder();
 		html.append("<div class=\"card\">\n");
 		html.append("  <p-table\n");
@@ -196,6 +205,7 @@ public class TemplatePrimeNG {
 		html.append("    [rowsPerPageOptions]=\"[5, 10, 20]\"\n");
 		html.append("    [loading]=\"loading\"\n");
 		html.append("    [rowHover]=\"true\"\n");
+		html.append("    [globalFilterFields]=\"["+filterLst+"]\"\n");
 		html.append("    [showGridlines]=\"true\"\n");
 		html.append("    [paginator]=\"true\"\n");
 		html.append("    responsiveLayout=\"scroll\"\n");
@@ -211,6 +221,7 @@ public class TemplatePrimeNG {
 		html.append("        	</p-inputicon> \n");
 		html.append("        	<input pInputText type=\"text\" (input)=\"onGlobalFilter(dt1, $event)\" placeholder=\"Search keyword\" /> \n");
 		html.append("    	</p-iconfield> \n");
+		html.append("	&nbsp;&nbsp;&nbsp;<button pButton label=\"Descargar\" class=\"p-button-outlined mb-2\" icon=\"pi pi-download\" (click)=\"download()\"></button>\n");
 		html.append("	</div> \n");
 		html.append("</ng-template> \n");
 
