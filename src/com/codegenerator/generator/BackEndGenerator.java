@@ -436,9 +436,17 @@ public class BackEndGenerator {
 					w.append("import " + this.packageName + ".infrastructure.adapters.input.rest.dto." + formatText(tableName, true) + "DTO;\n");
 					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
 				}
-
+				
+				w.append("/**\r\n"
+						+ " * \r\n"
+						+ " * @author José Rene Balderravano Hernández\r\n"
+						+ " * @since "+getDateTime()
+						+ " */\n");
 				w.append("@Entity\n");
-				w.append("@Table(name = \"" + tableName + "\")\n");
+				if(this.server.equals("sqlserver"))
+				w.append("@Table(name = \"[" + tableName + "]\")\n");
+				else
+					w.append("@Table(name = \"" + tableName + "\")\n");
 				w.append("public class " + formatText(tableName, true) + "Entity { \n\n");
 
 				// Add properties
@@ -561,6 +569,11 @@ public class BackEndGenerator {
 				w.append("import lombok.Getter;\n");
 				w.append("import lombok.Setter;\n\n");
 
+				w.append("/**\r\n"
+						+ " * \r\n"
+						+ " * @author José Rene Balderravano Hernández\r\n"
+						+ " * @since "+getDateTime()
+						+ " */\n");
 				w.append("@Getter\n");
 				w.append("@Setter\n");
 				w.append("public class " + formatText(tableName, true) + "Model { \n\n");
@@ -627,6 +640,11 @@ public class BackEndGenerator {
 				w.append("import lombok.Getter;\n");
 				w.append("import lombok.Setter;\n");
 
+				w.append("/**\r\n"
+						+ " * \r\n"
+						+ " * @author José Rene Balderravano Hernández\r\n"
+						+ " * @since "+getDateTime()
+						+ " */\n");
 				w.append("@Getter\n");
 				w.append("@Setter\n");
 				w.append("public class " + formatText(tableName, true) + "DTO { \n\n");
@@ -677,13 +695,22 @@ public class BackEndGenerator {
 
 			w.append("package " + packageNameRepository + ";\n\n");
 			w.append("import " + packageName + ".util.IBase;\n\n");
-			if (tableName.equalsIgnoreCase("Usuario"))
+			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User"))
 				w.append("import " + packageNameEntity + "." + formatText(tableName, true) + "Entity;\n");
+			
+			w.append("/**\r\n"
+					+ " * \r\n"
+					+ " * @author José Rene Balderravano Hernández\r\n"
+					+ " * @since "+getDateTime()
+					+ " */\n");
 			w.append("public interface " + formatText(tableName, true) + "Repository extends IBase { \n\n");
 
-			if (tableName.equalsIgnoreCase("Usuario"))
-				w.append("\tpublic UsuarioEntity findByUserName(String userName);");
-
+			
+			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User")) {
+				
+				w.append("\tpublic "+tableName+"Entity findByUserName(String userName);");
+			}
+			
 			w.append("}");
 			w.close();
 
@@ -711,7 +738,7 @@ public class BackEndGenerator {
 			w.append("import " + packageNameEntity + "." + formatText(tableName, true) + "Entity;\n");
 			w.append("import " + packageNameRepository + "." + formatText(tableName, true) + "Repository;\n");
 			w.append("import " + packageName + ".util.BaseRepository;\n\n");
-			if (tableName.equalsIgnoreCase("Usuario")) {
+			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User")) {
 				w.append("import java.util.ArrayList;\r\n" + "import java.util.List;\r\n"
 						+ "import org.hibernate.Session;\n" + "import jakarta.persistence.EntityManager;\r\n"
 						+ "import jakarta.persistence.criteria.CriteriaBuilder;\r\n"
@@ -720,22 +747,27 @@ public class BackEndGenerator {
 						+ "import jakarta.persistence.criteria.Root;\n");
 			}
 
+			w.append("/**\r\n"
+					+ " * \r\n"
+					+ " * @author José Rene Balderravano Hernández\r\n"
+					+ " * @since "+getDateTime()
+					+ " */\n");
 			w.append("@Repository\n");
 			w.append("public class " + formatText(tableName, true) + "RepositoryImpl extends BaseRepository<"
 					+ formatText(tableName, true) + "Entity> implements " + formatText(tableName, true)
 					+ "Repository { \n\n");
 
-			if (tableName.equalsIgnoreCase("Usuario"))
-				w.append("	@Override\r\n" + "	public UsuarioEntity findByUserName(String userName) {\r\n"
+			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User") )
+				w.append("	@Override\r\n" + "	public "+tableName+"Entity findByUserName(String userName) {\r\n"
 						+ "		\r\n" + "		Session session = this.getSf().getCurrentSession();\r\n"
 						+ "		EntityManager em = session.getEntityManagerFactory().createEntityManager();\r\n"
 						+ "		CriteriaBuilder cb = em.getCriteriaBuilder();\r\n"
-						+ "		CriteriaQuery<UsuarioEntity> q = cb.createQuery(UsuarioEntity.class);\r\n"
-						+ "		Root<UsuarioEntity> root = q.from(UsuarioEntity.class);		\r\n"
+						+ "		CriteriaQuery<"+tableName+"Entity> q = cb.createQuery("+tableName+"Entity.class);\r\n"
+						+ "		Root<"+tableName+"Entity> root = q.from("+tableName+"Entity.class);		\r\n"
 						+ "	    List<Predicate> predicates = new ArrayList<>();\r\n" + "	    \r\n"
-						+ "	        predicates.add(cb.equal(root.get(\"usuario\"), userName));\r\n" + "		\r\n"
+						+ "	        predicates.add(cb.equal(root.get(\"username\"), userName));\r\n" + "		\r\n"
 						+ "		q.select(root).where(predicates.toArray(new Predicate[0]));\r\n" + "	\r\n"
-						+ "		List<UsuarioEntity> l = em.createQuery(q).getResultList();\r\n"
+						+ "		List<"+tableName+"Entity> l = em.createQuery(q).getResultList();\r\n"
 						+ "		return l.get(0);\r\n" + "	}");
 			w.append("}");
 			w.close();
@@ -761,6 +793,11 @@ public class BackEndGenerator {
 
 			w.append("package " + packageNameService + ";\n\n");
 			w.append("import " + packageName + ".util.IBase;\n\n");
+			w.append("/**\r\n"
+					+ " * \r\n"
+					+ " * @author José Rene Balderravano Hernández\r\n"
+					+ " * @since "+getDateTime()
+					+ " */\n");
 			w.append("public interface " + formatText(tableName, true) + "Service extends IBase { \n\n");
 
 			w.append("}");
@@ -793,6 +830,11 @@ public class BackEndGenerator {
 			w.append("import " + packageNameService + "." + formatText(tableName, true) + "Service;\n");
 			w.append("import " + packageName + ".util.BaseService;\n\n");
 
+			w.append("/**\r\n"
+					+ " * \r\n"
+					+ " * @author José Rene Balderravano Hernández\r\n"
+					+ " * @since "+getDateTime()
+					+ " */\n");
 			w.append("@Service\n");
 			w.append("public class " + formatText(tableName, true) + "ServiceImpl extends BaseService<"
 					+ formatText(tableName, true) + "Entity> implements " + formatText(tableName, true)
@@ -826,6 +868,11 @@ public class BackEndGenerator {
 			w.append("import " + packageNameEntity + "." + formatText(tableName, true) + "DTO;\n");
 			w.append("import " + packageName + ".util.BaseController;\n\n");
 
+			w.append("/**\r\n"
+					+ " * \r\n"
+					+ " * @author José Rene Balderravano Hernández\r\n"
+					+ " * @since "+getDateTime()
+					+ " */\n");
 			w.append("@RestController\n");
 			w.append("@RequestMapping(path = \"" + tableName + "\")\n");
 			w.append("public class " + formatText(tableName, true) + "Controller extends BaseController<"

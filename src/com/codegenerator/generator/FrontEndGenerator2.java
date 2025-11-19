@@ -212,7 +212,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 						+ "Service } from '../../service/" + FieldNameFormatter.toSnakeCase(foreignKeyColumn)
 						+ ".service';\n");
 				declarationsOption.append(
-						"\topts" + fkName + ": any[] | undefined; \n");
+						"\topts" + FieldNameFormatter.toPascalCase(fkName) + ": any[] | undefined; \n");
 				declarationsService.append("private " + foreignKeyColumn + "Service: "
 						+ FieldNameFormatter.toPascalCase(foreignKeyColumn) + "Service,\n");
 				executionsService
@@ -283,8 +283,11 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 	public String getFormControl(Column column) {
 
-		if (column.getIsPrimaryKey() || column.getIsForeigKey())
+		if (column.getIsPrimaryKey())
 			return "new FormControl(undefined)";
+		
+		if (column.getIsForeigKey())
+			return "new FormControl(undefined"+ (!column.getIsNullable() ? ", Validators.required" : "") + ")";
 
 		switch (column.getDataType()) {
 		case "int":
@@ -339,7 +342,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		String routes = "";
 		for (Object[] table : tables) {
 			String tableName = (String) table[0];
-			routes += "\t\t{ path: '" + TextUtil.convertToSnakeCase(tableName)
+			routes += "\t\t\t{ path: '" + TextUtil.convertToSnakeCase(tableName)
 					+ "', loadChildren: () => import('./app/pages/" + TextUtil.convertToSnakeCase(tableName) + "/"
 					+ "routes') },\n";
 		}

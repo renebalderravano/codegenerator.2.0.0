@@ -55,7 +55,7 @@ public class TemplatePrimeNG {
 
 			String column = col.getName();
 			String type = col.getDataType().toLowerCase();
-			String label = FieldNameFormatter.splitCamelCaseToString(column);
+			String label = FieldNameFormatter.splitCamelCaseToString(FieldNameFormatter.formatText(column, true));
 
 			if (col.getIsForeigKey()) {
 				String fkName = "";
@@ -67,7 +67,7 @@ public class TemplatePrimeNG {
 //				String foreignKeyColumn = FieldNameFormatter.formatText(fkName, false);
 				column = col.getName();
 				type = "select";
-				label = FieldNameFormatter.splitCamelCaseToString(fkName);
+				label = FieldNameFormatter.splitCamelCaseToString(FieldNameFormatter.formatText(fkName, true));
 			}
 
 			if (column.equals("id")) {
@@ -86,7 +86,7 @@ public class TemplatePrimeNG {
 			formBuilder.append("			</div>\n");
 
 			if (i == 2) {
-				formBuilder.append("  	</div>\n");
+				formBuilder.append("  		</div>\n");
 				count -= 2;
 				i = 1;
 				continue;
@@ -94,16 +94,18 @@ public class TemplatePrimeNG {
 			i++;
 		}
 
-		if (count >= 1 && count < 2)
-			formBuilder.append("  	</div>\n");
+		if (count >= 1 && count < 2) {
+			formBuilder.append("			<div class=\"flex flex-col grow basis-0 gap-2\"></div>\n");
+			formBuilder.append("  		</div>\n");
+		}
 
 		formBuilder.append("		<br> <div class=\"flex flex-wrap gap-6 \">\r\n"
 				+ "            <div class=\"flex flex-col grow basis-0 gap-4 flex-end\"></div>\r\n"
 				+ "                <div class=\"flex-end\">\r\n"
-//				+ "                    <p-button icon='pi pi-fw pi-arrow-left' label=\"Regresar\" severity=\"warn\" "
-//				+ "						(onClick)=\"goTo" + FieldNameFormatter.toPascalCase(tableName) + "()\"\r\n"
-//				+ "                         />\r\n"
-				+ "                    <p-button icon='pi pi-fw pi-save' label=\"Guardar\" severity=\"info\" (onClick)=\"save()\"\r\n"
+				+ "                    <p-button icon='pi pi-eraser' label=\"Clear\" severity=\"warn\" "
+				+ "						(onClick)=\"clear()\"\r\n"
+				+ "                         />&nbsp;&nbsp;&nbsp;\r\n"
+				+ "                    <p-button icon='pi pi-fw pi-save' label=\"Save\" severity=\"info\" (onClick)=\"save()\"\r\n"
 				+ "                         />\r\n" + "                </div>\r\n" + "        </div>\n");
 		formBuilder.append("	</form>\n");
 
@@ -125,9 +127,9 @@ public class TemplatePrimeNG {
 			else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 				fkName = column.getName().replace("_id", "").replace("Id", "");
 			
-			return "<p-select [options]=\"opts" + fkName+ "\" formControlName=\""
-					+ fieldName + "\" optionValue=\"id\" optionLabel=\"nombre\"  placeholder=\"Seleccione " + fieldName
-					+ "\" class=\"w-full md:w-56\" />";
+			return "<p-select [options]=\"opts" + FieldNameFormatter.toPascalCase(fkName)+ "\" formControlName=\""
+					+ fieldName + "\" optionValue=\"id\" optionLabel=\"name\"  placeholder=\"Seleccione " + fieldName
+					+ "\" class=\"w-full md:w-56\" "+validator+" />";
 		}
 
 		switch (column.getDataType()) {
@@ -169,7 +171,15 @@ public class TemplatePrimeNG {
 		case "binary":
 		case "varbinary":
 		case "image":
-			return "<p-fileUpload name=\"" + fieldName + "\" url=\"uploadUrl\"></p-fileUpload>";
+			return "<p-fileUpload "
+					+ "name=\"archivo\"\r\n"
+					+ "				[customUpload]=\"true\"\r\n"
+					+ "				(uploadHandler)=\"uploadFile($event)\"\r\n"
+					+ "				accept=\".xlsx\"\r\n"
+					+ "				maxFileSize=\"1000000\"\r\n"
+					+ "				chooseLabel=\"Seleccionar archivo\"\r\n"
+					+ "				uploadLabel=\"Subir\"\r\n"
+					+ "				cancelLabel=\"Cancelar\"></p-fileUpload>";
 
 		default:
 			return "<!-- Tipo no reconocido: " + sqlType + " -->";
@@ -221,7 +231,8 @@ public class TemplatePrimeNG {
 		html.append("        	</p-inputicon> \n");
 		html.append("        	<input pInputText type=\"text\" (input)=\"onGlobalFilter(dt1, $event)\" placeholder=\"Search keyword\" /> \n");
 		html.append("    	</p-iconfield> \n");
-		html.append("	&nbsp;&nbsp;&nbsp;<button pButton label=\"Descargar\" class=\"p-button-outlined mb-2\" icon=\"pi pi-download\" (click)=\"download()\"></button>\n");
+		html.append("	 &nbsp;&nbsp;&nbsp;<p-button (click)=\"showDialog()\" label=\"Upload\" />\r\n"
+				+ "          &nbsp;&nbsp;&nbsp; <p-button (click)=\"download()\" label=\"Download\" />\n");
 		html.append("	</div> \n");
 		html.append("</ng-template> \n");
 
