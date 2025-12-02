@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -91,70 +92,104 @@ public class BackEndGenerator {
 			FileManager.createRootDirectory(workspace, projectName);
 			FileManager.createPackage(this.packagePath, this.packageName);
 
-			if (this.architecture.equals("mvc")) {
-
-				packageNameEntity = this.packageName + ".model";
-				packageNameRepository = this.packageName + ".repository";
-				packageNameRepositoryImpl = this.packageName + ".repository.impl";
-				packageNameSevice = this.packageName + ".service";
-				packageNameServiceImpl = this.packageName + ".service.impl";
-				packageNameController = this.packageName + ".controller";
-
-				FileManager.createPackage(this.packagePath, this.packageName + ".configuration");
-				FileManager.createPackage(this.packagePath, this.packageName + ".model");
-				FileManager.createPackage(this.packagePath, this.packageName + ".repository.impl");
-				FileManager.createPackage(this.packagePath, this.packageName + ".service.impl");
-				FileManager.createPackage(this.packagePath, this.packageName + ".controller");
-			} else if (this.architecture.equals("hexagonal")) {
-
-				packageNameEntity = this.packageName + ".infrastructure.adapters.output.persistence.entity";
-				packageNameRepository = this.packageName + ".application.ports.output";
-				packageNameRepositoryImpl = this.packageName + ".infrastructure.adapters.output.persistence";
-				packageNameSevice = this.packageName + ".application.ports.input";
-				packageNameServiceImpl = this.packageName + ".application.usecases";
-				packageNameController = this.packageName + ".infrastructure.adapters.input.rest";
-				packageNameModel = this.packageName + ".domain.model";
-				packageNameDTO = this.packageName + ".infrastructure.adapters.input.rest.dto";
-
-				FileManager.createPackage(this.packagePath, this.packageName + ".configuration");
-				FileManager.createPackage(this.packagePath, packageNameEntity);
-				FileManager.createPackage(this.packagePath, packageNameRepositoryImpl);
-				FileManager.createPackage(this.packagePath, packageNameSevice);
-				FileManager.createPackage(this.packagePath, packageNameRepository);
-				FileManager.createPackage(this.packagePath, packageNameServiceImpl);
-				FileManager.createPackage(this.packagePath, packageNameModel);
-				FileManager.createPackage(this.packagePath, packageNameController);
-				FileManager.createPackage(this.packagePath, packageNameDTO);
-			}
+			Set<Object> schemas = tables.stream().filter(arr -> arr.length > 0).map(arr -> arr[0])
+					.collect(Collectors.toSet());
 
 			setProcessProgress(30);
-			for (Object[] table : tables) {
-				String tableName = (String) table[0];
-				printLog("Obteniendo columnas de la tabla " + tableName + "");
-				List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
+			for (Object schema : schemas) {
 
-				List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
+				String schameName = ((String) schema).toLowerCase();
 
-				if (col.size() == 1) {
-					Table tbl = new Table();
-					tbl.setName(tableName);
-					tbl.setColumns(columns);
-					printLog("Generando modelo de la tabla " + tableName + "");
-
-					generateEntity(packageNameEntity, tableName, columns);
-					generateModel(packageNameModel, tableName, columns);
-					generateDTO(packageNameDTO, tableName, columns);
-					printLog("Generando repositorio de la tabla " + tableName + "");
-					generateRepository(packageNameEntity, packageNameRepository, tableName);
-					generateRepositoryImpl(packageNameEntity, packageNameRepository, packageNameRepositoryImpl,
-							tableName);
-					printLog("Generando servicio de la tabla " + tableName + "");
-					generateService(packageNameEntity, packageNameSevice, tableName);
-					generateServiceImpl(packageNameEntity, packageNameSevice, packageNameServiceImpl, tableName);
-
-					printLog("Generando controlador de la tabla " + tableName + "");
-					generateController(packageNameDTO, packageNameController, tableName);
+				if (schameName.equals("dbo")) {
+					schameName = "";
 				}
+
+				if (this.architecture.equals("mvc")) {
+
+					packageNameEntity = this.packageName + (schameName.equals("") ? "" : schameName) + ".model";
+					packageNameRepository = this.packageName + (schameName.equals("") ? "" : schameName)
+							+ ".repository";
+					packageNameRepositoryImpl = this.packageName + (schameName.equals("") ? "" : schameName)
+							+ ".repository.impl";
+					packageNameSevice = this.packageName + (schameName.equals("") ? "" : schameName) + ".service";
+					packageNameServiceImpl = this.packageName + (schameName.equals("") ? "" : schameName)
+							+ ".service.impl";
+					packageNameController = this.packageName + (schameName.equals("") ? "" : schameName)
+							+ ".controller";
+
+					FileManager.createPackage(this.packagePath, this.packageName + ".configuration");
+					FileManager.createPackage(this.packagePath, this.packageName + ".model");
+					FileManager.createPackage(this.packagePath, this.packageName + ".repository.impl");
+					FileManager.createPackage(this.packagePath, this.packageName + ".service.impl");
+					FileManager.createPackage(this.packagePath, this.packageName + ".controller");
+				} else if (this.architecture.equals("hexagonal")) {
+
+					packageNameEntity = this.packageName + ".infrastructure.adapters.output.persistence.entity"
+							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameRepository = this.packageName + ".application.ports.output"
+							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameRepositoryImpl = this.packageName + ".infrastructure.adapters.output.persistence"
+							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameSevice = this.packageName + ".application.ports.input"
+							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameServiceImpl = this.packageName + ".application.usecases"
+							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameController = this.packageName + ".infrastructure.adapters.input.rest"
+							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameModel = this.packageName + ".domain.model";
+					packageNameDTO = this.packageName + ".infrastructure.adapters.input.dto"
+							+ (schameName.equals("") ? "" : "." + schameName);
+
+					FileManager.createPackage(this.packagePath, this.packageName + ".configuration");
+					FileManager.createPackage(this.packagePath, packageNameEntity);
+					FileManager.createPackage(this.packagePath, packageNameRepositoryImpl);
+					FileManager.createPackage(this.packagePath, packageNameSevice);
+					FileManager.createPackage(this.packagePath, packageNameRepository);
+					FileManager.createPackage(this.packagePath, packageNameServiceImpl);
+					FileManager.createPackage(this.packagePath, packageNameModel);
+					FileManager.createPackage(this.packagePath, packageNameController);
+					FileManager.createPackage(this.packagePath, packageNameDTO);
+				}
+
+				Set<Object> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
+						.map(arr -> arr[1]).collect(Collectors.toSet());
+
+				if (!tablesBySchema.isEmpty()) {
+
+					for (Object table : tablesBySchema) {
+						String tableName = (String) table;
+						printLog("Obteniendo columnas de la tabla " + tableName + "");
+						List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
+
+						List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
+
+						if (col.size() == 1) {
+							Table tbl = new Table();
+							tbl.setSchema(schameName);
+							tbl.setName(tableName);
+							tbl.setColumns(columns);
+							printLog("Generando modelo de la tabla " + tableName + "");
+
+							generateEntity(packageNameEntity,tbl);
+							generateModel(packageNameModel, tbl);
+							generateDTO(packageNameDTO, tbl);
+							printLog("Generando repositorio de la tabla " + tableName + "");
+							generateRepository(packageNameEntity, packageNameRepository, tableName);
+							generateRepositoryImpl(packageNameEntity, packageNameRepository, packageNameRepositoryImpl,
+									tableName);
+							printLog("Generando servicio de la tabla " + tableName + "");
+							generateService(packageNameEntity, packageNameSevice, tableName);
+							generateServiceImpl(packageNameEntity, packageNameSevice, packageNameServiceImpl,
+									tableName);
+
+							printLog("Generando controlador de la tabla " + tableName + "");
+							generateController(packageNameDTO, packageNameController, tableName);
+						}
+
+					}
+
+				}
+
 			}
 
 			setProcessProgress(50);
@@ -312,6 +347,10 @@ public class BackEndGenerator {
 			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[packageName]", packageName);
 
 			if (this.architecture.equals("hexagonal")) {
+				packageNameController = this.packageName + ".infrastructure.adapters.input.rest.security";
+				packageNameDTO = this.packageName + ".infrastructure.adapters.input.dto.security";
+				packageNameSevice = this.packageName + ".application.ports.input.security";
+				packageNameServiceImpl = this.packageName + ".application.usecases.security";
 				FileManager.copyDir(
 						PropertiesReading.folder_codegenerator_util
 								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
@@ -407,8 +446,13 @@ public class BackEndGenerator {
 		return text;
 	}
 
-	private boolean generateEntity(String packageNameEntity, String tableName, List<Column> columns) {
+	private boolean generateEntity(String packageNameEntity, Table table) {
 		try {
+			
+			String tableSchema = table.getSchema();
+			String tableName = table.getName();
+			List<Column> columns = table.getColumns();
+			
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 
 			if (col.size() == 1) {
@@ -433,18 +477,18 @@ public class BackEndGenerator {
 				List<Column> cols = columns.stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
 
 				if (cols.size() > 0) {
-					w.append("import " + this.packageName + ".infrastructure.adapters.input.rest.dto." + formatText(tableName, true) + "DTO;\n");
+					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
+					String sfk = fk.get()[0].toString().toLowerCase();
+					w.append("import " + this.packageName + ".infrastructure.adapters.input.dto." +sfk + "."
+							+ formatText(tableName, true) + "DTO;\n");
 					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
 				}
-				
-				w.append("/**\r\n"
-						+ " * \r\n"
-						+ " * @author José Rene Balderravano Hernández\r\n"
-						+ " * @since "+getDateTime()
-						+ " */\n");
+
+				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+						+ getDateTime() + " */\n");
 				w.append("@Entity\n");
-				if(this.server.equals("sqlserver"))
-				w.append("@Table(name = \"[" + tableName + "]\")\n");
+				if (this.server.equals("sqlserver"))
+					w.append("@Table(name = \"[" + tableName + "]\" " +(tableSchema.equals("")?"":", schema=\""+tableSchema+"\"")+ ")\n");
 				else
 					w.append("@Table(name = \"" + tableName + "\")\n");
 				w.append("public class " + formatText(tableName, true) + "Entity { \n\n");
@@ -478,8 +522,10 @@ public class BackEndGenerator {
 						String foreignKeyColumn = formatText(fkName, true);
 						w.append("\t@ManyToOne\n");
 						w.append("\t@JoinColumn(name = \"" + column.getName() + "\")\n");
-						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true) + "DTO.class, srcFieldName = \""+ column.getName() + "\")\n");
-						w.append("\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
+								+ "DTO.class, srcFieldName = \"" + column.getName() + "\")\n");
+						w.append(
+								"\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
 					}
 				}
 
@@ -537,8 +583,13 @@ public class BackEndGenerator {
 		return true;
 	}
 
-	private boolean generateModel(String packageNameModel, String tableName, List<Column> columns) {
+	private boolean generateModel(String packageNameModel, Table table) {
 		try {
+			
+			String tableSchema = table.getSchema();
+			String tableName = table.getName();
+			List<Column> columns = table.getColumns();
+			
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 
 			if (col.size() == 1) {
@@ -557,23 +608,22 @@ public class BackEndGenerator {
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
 				w.append("package " + packageNameModel + ";\n\n");
-				
+
 				List<Column> cols = columns.stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
 
 				if (cols.size() > 0) {
-				
-					w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + formatText(tableName, true) + "Entity;\n");
+					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
+					String sfk = fk.get()[0].toString().toLowerCase();
+					w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity."
+							 +sfk + "."+ formatText(tableName, true) + "Entity;\n");
 					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
 				}
 
 				w.append("import lombok.Getter;\n");
 				w.append("import lombok.Setter;\n\n");
 
-				w.append("/**\r\n"
-						+ " * \r\n"
-						+ " * @author José Rene Balderravano Hernández\r\n"
-						+ " * @since "+getDateTime()
-						+ " */\n");
+				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+						+ getDateTime() + " */\n");
 				w.append("@Getter\n");
 				w.append("@Setter\n");
 				w.append("public class " + formatText(tableName, true) + "Model { \n\n");
@@ -586,12 +636,12 @@ public class BackEndGenerator {
 							fkName = column.getName().substring(2);
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
-						
+
 						String foreignKeyColumn = formatText(fkName, true) + "";
-						w.append("\t@MapperMapping(srcClass = "+formatText(tableName, true)+"Entity.class, srcFieldName = \""+formatText(fkName, false)+".id\")\n");
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
+								+ "Entity.class, srcFieldName = \"" + formatText(fkName, false) + ".id\")\n");
 					}
-					
-					
+
 					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 							+ formatText(column.getName(), false) + ";\n\n");
 				}
@@ -611,14 +661,18 @@ public class BackEndGenerator {
 
 			return false;
 		}
-		
+
 		return true;
 	}
 
-	private boolean generateDTO(String packageNameDTO, String tableName, List<Column> columns) {
+	private boolean generateDTO(String packageNameDTO, Table table) {
 		try {
+			
+			String tableSchema = table.getSchema();
+			String tableName = table.getName();
+			List<Column> columns = table.getColumns();
+			
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
-
 			if (col.size() == 1) {
 
 				String pathModel = packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\"
@@ -635,16 +689,12 @@ public class BackEndGenerator {
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
 				w.append("package " + packageNameDTO + ";\n\n");
-				
-			
+
 				w.append("import lombok.Getter;\n");
 				w.append("import lombok.Setter;\n");
 
-				w.append("/**\r\n"
-						+ " * \r\n"
-						+ " * @author José Rene Balderravano Hernández\r\n"
-						+ " * @since "+getDateTime()
-						+ " */\n");
+				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+						+ getDateTime() + " */\n");
 				w.append("@Getter\n");
 				w.append("@Setter\n");
 				w.append("public class " + formatText(tableName, true) + "DTO { \n\n");
@@ -660,11 +710,10 @@ public class BackEndGenerator {
 						String foreignKeyColumn = formatText(fkName, true) + "";
 //						w.append("\t@MapperMapping(srcClass = "+foreignKeyColumn+"Model.class, srcFieldName = \"id"+foreignKeyColumn+"\")\n");
 					}
-					
+
 					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 							+ formatText(column.getName(), false) + ";\n\n");
 				}
-				
 
 				// Add constructor
 
@@ -697,20 +746,16 @@ public class BackEndGenerator {
 			w.append("import " + packageName + ".util.IBase;\n\n");
 			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User"))
 				w.append("import " + packageNameEntity + "." + formatText(tableName, true) + "Entity;\n");
-			
-			w.append("/**\r\n"
-					+ " * \r\n"
-					+ " * @author José Rene Balderravano Hernández\r\n"
-					+ " * @since "+getDateTime()
-					+ " */\n");
+
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
 			w.append("public interface " + formatText(tableName, true) + "Repository extends IBase { \n\n");
 
-			
 			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User")) {
-				
-				w.append("\tpublic "+tableName+"Entity findByUserName(String userName);");
+
+				w.append("\tpublic " + tableName + "Entity findByUserName(String userName);");
 			}
-			
+
 			w.append("}");
 			w.close();
 
@@ -747,27 +792,24 @@ public class BackEndGenerator {
 						+ "import jakarta.persistence.criteria.Root;\n");
 			}
 
-			w.append("/**\r\n"
-					+ " * \r\n"
-					+ " * @author José Rene Balderravano Hernández\r\n"
-					+ " * @since "+getDateTime()
-					+ " */\n");
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
 			w.append("@Repository\n");
 			w.append("public class " + formatText(tableName, true) + "RepositoryImpl extends BaseRepository<"
 					+ formatText(tableName, true) + "Entity> implements " + formatText(tableName, true)
 					+ "Repository { \n\n");
 
-			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User") )
-				w.append("	@Override\r\n" + "	public "+tableName+"Entity findByUserName(String userName) {\r\n"
+			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User"))
+				w.append("	@Override\r\n" + "	public " + tableName + "Entity findByUserName(String userName) {\r\n"
 						+ "		\r\n" + "		Session session = this.getSf().getCurrentSession();\r\n"
 						+ "		EntityManager em = session.getEntityManagerFactory().createEntityManager();\r\n"
-						+ "		CriteriaBuilder cb = em.getCriteriaBuilder();\r\n"
-						+ "		CriteriaQuery<"+tableName+"Entity> q = cb.createQuery("+tableName+"Entity.class);\r\n"
-						+ "		Root<"+tableName+"Entity> root = q.from("+tableName+"Entity.class);		\r\n"
+						+ "		CriteriaBuilder cb = em.getCriteriaBuilder();\r\n" + "		CriteriaQuery<" + tableName
+						+ "Entity> q = cb.createQuery(" + tableName + "Entity.class);\r\n" + "		Root<" + tableName
+						+ "Entity> root = q.from(" + tableName + "Entity.class);		\r\n"
 						+ "	    List<Predicate> predicates = new ArrayList<>();\r\n" + "	    \r\n"
 						+ "	        predicates.add(cb.equal(root.get(\"username\"), userName));\r\n" + "		\r\n"
 						+ "		q.select(root).where(predicates.toArray(new Predicate[0]));\r\n" + "	\r\n"
-						+ "		List<"+tableName+"Entity> l = em.createQuery(q).getResultList();\r\n"
+						+ "		List<" + tableName + "Entity> l = em.createQuery(q).getResultList();\r\n"
 						+ "		return l.get(0);\r\n" + "	}");
 			w.append("}");
 			w.close();
@@ -793,11 +835,8 @@ public class BackEndGenerator {
 
 			w.append("package " + packageNameService + ";\n\n");
 			w.append("import " + packageName + ".util.IBase;\n\n");
-			w.append("/**\r\n"
-					+ " * \r\n"
-					+ " * @author José Rene Balderravano Hernández\r\n"
-					+ " * @since "+getDateTime()
-					+ " */\n");
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
 			w.append("public interface " + formatText(tableName, true) + "Service extends IBase { \n\n");
 
 			w.append("}");
@@ -830,11 +869,8 @@ public class BackEndGenerator {
 			w.append("import " + packageNameService + "." + formatText(tableName, true) + "Service;\n");
 			w.append("import " + packageName + ".util.BaseService;\n\n");
 
-			w.append("/**\r\n"
-					+ " * \r\n"
-					+ " * @author José Rene Balderravano Hernández\r\n"
-					+ " * @since "+getDateTime()
-					+ " */\n");
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
 			w.append("@Service\n");
 			w.append("public class " + formatText(tableName, true) + "ServiceImpl extends BaseService<"
 					+ formatText(tableName, true) + "Entity> implements " + formatText(tableName, true)
@@ -868,11 +904,8 @@ public class BackEndGenerator {
 			w.append("import " + packageNameEntity + "." + formatText(tableName, true) + "DTO;\n");
 			w.append("import " + packageName + ".util.BaseController;\n\n");
 
-			w.append("/**\r\n"
-					+ " * \r\n"
-					+ " * @author José Rene Balderravano Hernández\r\n"
-					+ " * @since "+getDateTime()
-					+ " */\n");
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
 			w.append("@RestController\n");
 			w.append("@RequestMapping(path = \"" + tableName + "\")\n");
 			w.append("public class " + formatText(tableName, true) + "Controller extends BaseController<"

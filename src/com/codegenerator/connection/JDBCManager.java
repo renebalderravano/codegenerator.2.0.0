@@ -11,6 +11,7 @@ import java.util.List;
 import com.codegenerator.util.Column;
 import com.codegenerator.util.PropertiesReading;
 import com.codegenerator.util.Result;
+import com.codegenerator.util.Table;
 
 public class JDBCManager {
 
@@ -112,6 +113,42 @@ public class JDBCManager {
 		}
 		return dbs;
 	}
+	
+	public List<Table> getTableWithSchemaFromDataBase(String database) {
+		List<Table> tables = new ArrayList<Table>();
+		Statement st;
+		try {
+
+			String query = PropertiesReading.getProperty(getServer() + ".query.tables");
+
+			query = query.replace("?1", database);
+//			if (server.equals("MySQL")) {
+//				query = "SELECT * FROM information_schema.tables " + "WHERE table_schema = '" + database + "'";
+//
+//			} else {
+//
+//				query = "use " + database + ";  SELECT * FROM information_schema.tables; ";
+//			}
+			st = getConnection().createStatement();
+			ResultSet rs = st.executeQuery(query); // Execute query
+			while (rs.next()) {
+				Table table = new Table();
+				
+				String schema = rs.getString("table_schema"); // Retrieve schema from db
+				table.setSchema(schema);				
+				String name = rs.getString("table_name"); // Retrieve name from db				
+				table.setName(name);
+				tables.add(table);
+			}
+
+			st.close(); // close statement
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return tables;
+	}
+
 
 	public List<String> getTableFromDataBase(String database) {
 		List<String> tables = new ArrayList<String>();
