@@ -4,11 +4,20 @@ import java.util.List;
 
 public class Table {
 
+	private String schema;
 	private String name;
 	private List<Column> columns;
 
 	public Table() {
 		// TODO Auto-generated constructor stub
+	}
+
+	public String getSchema() {
+		return schema;
+	}
+
+	public void setSchema(String schema) {
+		this.schema = schema;
 	}
 
 	public String getName() {

@@ -14,6 +14,7 @@ import com.codegenerator.connection.JDBCManager;
 import com.codegenerator.util.ComboItem;
 import com.codegenerator.util.PropertiesReading;
 import com.codegenerator.util.Result;
+import com.codegenerator.util.Table;
 
 import javax.swing.DefaultCellEditor;
 import javax.swing.DefaultComboBoxModel;
@@ -92,7 +93,7 @@ public class ConnectionDBServerFrame extends JFrame {
 					dbs.toArray(array); // fill the array
 					cbDatabase.setModel(new DefaultComboBoxModel(array));
 
-					createTable(new ArrayList<>(), new String[] { "Tabla", "Generar" });
+					createTable(new ArrayList<>(), new String[] {"Schema",  "Tabla", "Generar" });
 				}
 			}
 		});
@@ -216,7 +217,7 @@ public class ConnectionDBServerFrame extends JFrame {
 		btnTestConnection.setBounds(310, 131, 86, 20);
 		contentPane.add(btnTestConnection);
 
-		String[] columns = new String[] { "Tabla", "Generar" };
+		String[] columns = new String[] {"Schema", "Tabla", "Generar" };
 		
 		tblTables = new JTable(data, columns);
 		tblTables.setBounds(26, 244, 372, 158);
@@ -229,8 +230,10 @@ public class ConnectionDBServerFrame extends JFrame {
 		cbDatabase.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				if (e.getStateChange() == ItemEvent.SELECTED) {
-					List<String> tables = c.getTableFromDataBase(e.getItem().toString());
-					createTable(tables, columns);
+					List<Table> tablesWithSchema = c.getTableWithSchemaFromDataBase(e.getItem().toString());
+					createTableWithSchema(tablesWithSchema, columns);
+//					List<String> tables = c.getTableFromDataBase(e.getItem().toString());
+//					createTable(tables, columns);
 				}
 			}
 		});
@@ -242,18 +245,17 @@ public class ConnectionDBServerFrame extends JFrame {
             boolean isSelected = selectAllCheckbox.isSelected();
             tableSelected.clear();
             for (int i = 0; i < tblTables.getRowCount(); i++) {
-            	  tblTables.setValueAt(isSelected, i, 1);
-            	  data[i][1] = isSelected;
-            	  data[i][2] = "Cero";
+            	  tblTables.setValueAt(isSelected, i, 2);
+            	  data[i][2] = isSelected;
+            	  data[i][3] = "Cero";
             	  if(isSelected) {
             		  Object[] row = new Object[6];
-            			row[0] = tblTables.getValueAt(i, 0);
-            			row[1] = true;
-            			row[2] = "Cero";
-            			
+            		  row[0] = tblTables.getValueAt(i, 0);
+            			row[1] = tblTables.getValueAt(i, 1);
+            			row[2] = true;
+            			row[3] = "Cero";
             			tableSelected.add(row);
             	  }
-            	  
             }
             
             System.out.println("Cantidad de seleccionados: " + tableSelected.size());
@@ -264,8 +266,97 @@ public class ConnectionDBServerFrame extends JFrame {
 
 	}
 
+	public void createTableWithSchema(List<Table> rows, String[] columns) {
+
+		data = new Object[rows.size()][];
+
+		int i = 0;
+		for (Table t : rows) {
+			Object[] row = new Object[6];
+			row[0] = t.getSchema();
+			row[1] = t.getName();
+			row[2] = true;
+			row[3] = "Cero";
+			data[i] = row;
+			tableSelected.add(data[i]);
+			i++;
+		}
+
+		final Class[] columnClass = new Class[] {String.class, String.class, Boolean.class };
+		// create table model with data
+		DefaultTableModel model = new DefaultTableModel(data, columns) {
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return true;
+			}
+
+			@Override
+			public Class<?> getColumnClass(int columnIndex) {
+				return columnClass[columnIndex];
+			}
+		};
+
+		tblTables.setModel(model);
+
+		for (i = 0; i < tblTables.getRowCount(); i++) {
+			tblTables.setValueAt(true, i, 2);
+		}
+
+		TableColumnModel columnModel = tblTables.getColumnModel();
+		TableColumn column = columnModel.getColumn(2);
+		column.setCellEditor(tblTables.getDefaultEditor(Boolean.class));
+		column.setCellRenderer(tblTables.getDefaultRenderer(Boolean.class));
+		
+
+		JCheckBox checkBox = new JCheckBox();
+		checkBox.setSelected(true);
+		
+		checkBox.addItemListener(new ItemListener() {
+			
+			public void itemStateChanged(ItemEvent e) {
+				
+				int row = tblTables.getSelectedRow();
+				int column = tblTables.getSelectedColumn();
+
+				try {
+					
+					if(row != -1) {
+						if(data[row][3].equals("Cero")) {
+							if(((boolean) data[row][column])) {
+								tableSelected.removeIf(r -> r[1] == data[row][1] );
+								data[row][column] = false;
+							}
+							else {
+								data[row][column] = true;
+								tableSelected.add(data[row]);
+							}
+							data[row][3] = "uno";
+						}
+						else if(data[row][3].equals("uno")) {
+							data[row][3] = "Cero";
+						}	
+					}
+					
+//					if (e.getStateChange() == ItemEvent.SELECTED) {
+//						data[row][column] = true;
+//						tableSelected.add(data[row]);
+//					} else if (e.getStateChange() == ItemEvent.DESELECTED) {
+//						tableSelected.remove(data[row]);
+//						data[row][column] = false;
+//					}
+					System.out.println("Cantidad de seleccionados: " + tableSelected.size());
+				} catch (Exception e2) {
+					// TODO: handle exception
+				}
+
+			}
+		});
+		column.setCellEditor(new DefaultCellEditor(checkBox));
+	}
+
 	
 	boolean isInitializing = true;
+	@Deprecated
 	public void createTable(List<String> rows, String[] columns) {
 
 		data = new Object[rows.size()][];

@@ -144,18 +144,16 @@ public class DataBaseFrame extends JFrame {
 		cbArquitectura.setBounds(159, 137, 130, 22);
 		contentPane.add(cbArquitectura);
 		
-		
 //		JCheckBox chkBackEnd = new JCheckBox("Generar Spring Boot Project");
 //		chkBackEnd.setSelected(true);
 //		chkBackEnd.setBounds(23, 169, 212, 23);
 //		contentPane.add(chkBackEnd);
 //		
-
 //		JCheckBox chkFrontEnd = new JCheckBox("Generar Front-End");
 //		chkFrontEnd.setBounds(23, 198, 137, 23);
 //		contentPane.add(chkFrontEnd);
 		
-		String[] columns = new String[] { "Tabla", "Generar", "Generar lista", "Generar Form", "Generar form en Pop-Up"};
+		String[] columns = new String[] {"Schema", "Tabla", "Generar", "Generar lista", "Generar Form", "Generar form en Pop-Up"};
 		
 		Object[] d = tables.toArray();		
 		Object[][] data = new Object[d.length][columns.length];		
@@ -166,7 +164,7 @@ public class DataBaseFrame extends JFrame {
 			data[i][4]= false;
 		}
 		
-		final Class[] columnClass = new Class[] { String.class, Boolean.class, Boolean.class, Boolean.class, Boolean.class   };
+		final Class[] columnClass = new Class[] {String.class, String.class, Boolean.class, Boolean.class, Boolean.class, Boolean.class   };
 		// create table model with data
 		DefaultTableModel model = new DefaultTableModel(data, columns) {
 			@Override

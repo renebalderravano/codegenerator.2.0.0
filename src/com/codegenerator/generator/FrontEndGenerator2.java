@@ -63,7 +63,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		for (Object[] table : tables) {
 			i += (availableTime / (tables.size()));
 			setProcessProgress(i);
-			String tableName = (String) table[0];
+			String tableName = (String) table[1];
 			printLog("Obteniendo columnas de la tabla " + tableName + "");
 
 			List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
@@ -330,7 +330,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 		String option = "";
 		for (Object[] table : tables) {
-			String tableName = (String) table[0];
+			String tableName = (String) table[1];
 			option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(tableName)
 					+ "', icon: 'pi pi-fw pi-user', routerLink: ['/" + FieldNameFormatter.toSnakeCase(tableName)
 					+ "'] },\n";
@@ -341,7 +341,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 		String routes = "";
 		for (Object[] table : tables) {
-			String tableName = (String) table[0];
+			String tableName = (String) table[1];
 			routes += "\t\t\t{ path: '" + TextUtil.convertToSnakeCase(tableName)
 					+ "', loadChildren: () => import('./app/pages/" + TextUtil.convertToSnakeCase(tableName) + "/"
 					+ "routes') },\n";
