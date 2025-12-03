@@ -206,7 +206,7 @@ public class JDBCManager {
 //				column.setIsNullable(rs.getBoolean("AutoIncrement"));
 //				column.setIsPrimaryKey(rs.getBoolean("IsPrimaryKey"));
 //				column.setIsForeignKey(rs.getBoolean("IsForeignKey"));
-//				column.setTableReference(rs.getString("TABLE_REFERENCE"));
+				column.setTableReference(rs.getString("REFERENCED_TABLE"));
 				columns.add(column);
 			}
 			st.close(); 

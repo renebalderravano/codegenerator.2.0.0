@@ -14,6 +14,7 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -224,7 +225,7 @@ public class BackEndGenerator {
 			StringBuilder builder = new StringBuilder();
 
 			for (Object[] table : tables) {
-				String tableName = (String) table[0];
+				String tableName = (String) table[1];
 				builder.append("auth.requestMatchers(\"/" + FieldNameFormatter.toPascalCase(tableName)
 						+ "/**\").permitAll();\n");
 			}
@@ -478,10 +479,24 @@ public class BackEndGenerator {
 
 				if (cols.size() > 0) {
 					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
-					String sfk = fk.get()[0].toString().toLowerCase();
-					w.append("import " + this.packageName + ".infrastructure.adapters.input.dto." +sfk + "."
+					String sfkCurrent = fk.get()[0].toString().toLowerCase();
+					w.append("import " + this.packageName + ".infrastructure.adapters.input.dto." +sfkCurrent + "."
 							+ formatText(tableName, true) + "DTO;\n");
 					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
+					
+					for (Iterator iterator = cols.iterator(); iterator.hasNext();) {
+						Column colu = (Column) iterator.next();
+						
+						fk = tables.stream().filter(tbl -> tbl[1].equals(colu.getTableReference())).findFirst();
+						String sfk = fk.get()[0].toString().toLowerCase();
+						
+						if(!sfkCurrent.equals(sfk))
+							w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." +sfk + "."
+								+ formatText(colu.getTableReference(), true) + "Entity;\n");						
+					}
+					
+					
+					
 				}
 
 				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
