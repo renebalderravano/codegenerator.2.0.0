@@ -2,6 +2,7 @@ package com.codegenerator.generator;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -327,14 +328,51 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 	}
 
 	public Boolean configurar() {
+		
+		Set<Object> schemas = tables.stream().filter(arr -> arr.length > 0).map(arr -> arr[0])
+				.collect(Collectors.toSet());
 
 		String option = "";
-		for (Object[] table : tables) {
-			String tableName = (String) table[1];
-			option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(tableName)
-					+ "', icon: 'pi pi-fw pi-user', routerLink: ['/" + FieldNameFormatter.toSnakeCase(tableName)
+		for (Object schema : schemas) {
+			String schameName = ((String) schema).toLowerCase();
+
+			if (schameName.equals("dbo")) {
+				schameName = "";
+				continue;
+			}
+			
+			option += "\t\t\t\t\t{\n "
+			+ " label: '" + FieldNameFormatter.splitCamelCaseToString(schameName)+ "',\n"
+			+ " icon: 'pi pi-fw pi-user',\n"
+			+ " items: [\n";
+			Set<Object> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
+					.map(arr -> arr[1]).collect(Collectors.toSet());
+
+			if (!tablesBySchema.isEmpty()) {
+				
+				for (Iterator iterator = tablesBySchema.iterator(); iterator.hasNext();) {
+					Object object = (Object) iterator.next();
+					option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(object.toString())
+					+ "', icon: 'pi pi-fw pi-user', routerLink: ['/" + FieldNameFormatter.toSnakeCase(object.toString())
 					+ "'] },\n";
+				}
+				
+				
+			}
+			
+			
+			option +=  " ]"
+			+ "\t\t\t\t\t },\n";
 		}
+		
+
+//		String option = "";
+//		for (Object[] table : tables) {
+//			String tableName = (String) table[1];
+//			option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(tableName)
+//					+ "', icon: 'pi pi-fw pi-user', routerLink: ['/" + FieldNameFormatter.toSnakeCase(tableName)
+//					+ "'] },\n";
+//		}
 
 		String navClass = packagePath + "\\layout\\component\\" + "app.menu.ts";
 		FileManager.replaceTextInFile(navClass, "//ArrayOptions", option);

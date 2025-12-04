@@ -193,6 +193,8 @@ public class JDBCManager {
 				Column column = new Column();
 				column.setName(rs.getString("column_name"));
 				column.setDataType(rs.getString("data_type"));
+				column.setNumericPrecision(rs.getInt("NUMERIC_PRECISION"));
+				column.setNumericScale(rs.getInt("NUMERIC_SCALE"));
 				column.setIsNullable(rs.getString("is_nullable").equals("YES"));
 				column.setLength(rs.getInt("CHARACTER_MAXIMUM_LENGTH"));
 				if (rs.getString("column_key") != null) {
