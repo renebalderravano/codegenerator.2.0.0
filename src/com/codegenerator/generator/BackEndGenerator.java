@@ -171,7 +171,7 @@ public class BackEndGenerator {
 							tbl.setColumns(columns);
 							printLog("Generando modelo de la tabla " + tableName + "");
 
-							generateEntity(packageNameEntity,tbl);
+							generateEntity(packageNameEntity, tbl);
 							generateModel(packageNameModel, tbl);
 							generateDTO(packageNameDTO, tbl);
 							printLog("Generando repositorio de la tabla " + tableName + "");
@@ -226,7 +226,7 @@ public class BackEndGenerator {
 
 			for (Object[] table : tables) {
 				String tableName = (String) table[1];
-				builder.append("auth.requestMatchers(\"/" + FieldNameFormatter.toPascalCase(tableName)
+				builder.append("\t\t\tauth.requestMatchers(\"/" + FieldNameFormatter.toPascalCase(tableName)
 						+ "/**\").permitAll();\n");
 			}
 
@@ -449,11 +449,11 @@ public class BackEndGenerator {
 
 	private boolean generateEntity(String packageNameEntity, Table table) {
 		try {
-			
+
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
-			
+
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 
 			if (col.size() == 1) {
@@ -480,30 +480,30 @@ public class BackEndGenerator {
 				if (cols.size() > 0) {
 					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
 					String sfkCurrent = fk.get()[0].toString().toLowerCase();
-					w.append("import " + this.packageName + ".infrastructure.adapters.input.dto." +sfkCurrent + "."
+					w.append("import " + this.packageName + ".infrastructure.adapters.input.dto." + sfkCurrent + "."
 							+ formatText(tableName, true) + "DTO;\n");
 					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
-					
+
 					for (Iterator iterator = cols.iterator(); iterator.hasNext();) {
 						Column colu = (Column) iterator.next();
-						
+
 						fk = tables.stream().filter(tbl -> tbl[1].equals(colu.getTableReference())).findFirst();
 						String sfk = fk.get()[0].toString().toLowerCase();
-						
-						if(!sfkCurrent.equals(sfk))
-							w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." +sfk + "."
-								+ formatText(colu.getTableReference(), true) + "Entity;\n");						
+
+						if (!sfkCurrent.equals(sfk))
+							w.append(
+									"import " + this.packageName + ".infrastructure.adapters.output.persistence.entity."
+											+ sfk + "." + formatText(colu.getTableReference(), true) + "Entity;\n");
 					}
-					
-					
-					
+
 				}
 
 				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
 						+ getDateTime() + " */\n");
 				w.append("@Entity\n");
 				if (this.server.equals("sqlserver"))
-					w.append("@Table(name = \"[" + tableName + "]\" " +(tableSchema.equals("")?"":", schema=\""+tableSchema+"\"")+ ")\n");
+					w.append("@Table(name = \"[" + tableName + "]\" "
+							+ (tableSchema.equals("") ? "" : ", schema=\"" + tableSchema + "\"") + ")\n");
 				else
 					w.append("@Table(name = \"" + tableName + "\")\n");
 				w.append("public class " + formatText(tableName, true) + "Entity { \n\n");
@@ -522,9 +522,15 @@ public class BackEndGenerator {
 						String len = "";
 						if ((column.getDataType().equals("varchar") || column.getDataType().equals("nvarchar"))
 								&& column.getLength() != -1)
-							len = ", length = " + column.getLength() + "";
+							len = ", length = " + column.getLength() + " ";
 
-						w.append("\t@Column(name = \"" + column.getName() + "\"" + len + ")\n");
+						String scalPre = "";
+						if ((column.getDataType().equals("decimal") || column.getDataType().equals("numeric"))
+								&& column.getLength() != -1)
+						scalPre = ", precision = " + column.getNumericPrecision() + ", scale = "
+									+ column.getNumericScale() + " ";
+
+						w.append("\t@Column(name = \"" + column.getName() + "\"" + len + scalPre + ")\n");
 						w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 								+ formatText(column.getName(), false) + ";\n\n");
 					} else {
@@ -600,11 +606,11 @@ public class BackEndGenerator {
 
 	private boolean generateModel(String packageNameModel, Table table) {
 		try {
-			
+
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
-			
+
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 
 			if (col.size() == 1) {
@@ -629,8 +635,8 @@ public class BackEndGenerator {
 				if (cols.size() > 0) {
 					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
 					String sfk = fk.get()[0].toString().toLowerCase();
-					w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity."
-							 +sfk + "."+ formatText(tableName, true) + "Entity;\n");
+					w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + sfk
+							+ "." + formatText(tableName, true) + "Entity;\n");
 					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
 				}
 
@@ -682,11 +688,11 @@ public class BackEndGenerator {
 
 	private boolean generateDTO(String packageNameDTO, Table table) {
 		try {
-			
+
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
-			
+
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 			if (col.size() == 1) {
 
