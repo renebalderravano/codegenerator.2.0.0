@@ -46,41 +46,37 @@ public class FileManager {
 			// permission issue
 			e.printStackTrace();
 		}
-
 	}
 
 	public static void replaceTextInFilesFolder(String src, String oldText, String newText) {
 		try {
 			Files.walk(Paths.get(src))
-//			.filter(Files::isRegularFile)
-//			.filter(path -> (!path.toString().endsWith(".png") || !path.toString().endsWith(".jpg")
-//					|| !path.toString().endsWith(".jpeg") || !path.toString().endsWith(".svg")
-//					))
-			
-			
-					.forEach(a -> {
-						Path path = Paths.get(a.toString());
+			.filter(Files::isRegularFile)
+			.filter(path -> (!path.toString().endsWith(".png") || !path.toString().endsWith(".jpg")
+					|| !path.toString().endsWith(".jpeg") || !path.toString().endsWith(".svg"))
+			)			
+			.forEach(a -> {
+				Path path = Paths.get(a.toString());
 
-						if (path.toString().endsWith(".png") || path.toString().endsWith(".jpg")
-								|| path.toString().endsWith(".jpeg") || path.toString().endsWith(".svg")) {
-							System.out.println("Este archivo es una imagen: " + path.getFileName());
+				if (path.toString().endsWith(".png") || path.toString().endsWith(".jpg")
+						|| path.toString().endsWith(".jpeg") || path.toString().endsWith(".svg")) {
+					System.out.println("Este archivo es una imagen: " + path.getFileName());
 
-						} else {
-							Charset charset = StandardCharsets.UTF_8;
+				} else {
+					Charset charset = StandardCharsets.UTF_8;
 
-							String content;
-							try {
-								if (!Files.isDirectory(path)) {
-									content = new String(Files.readAllBytes(path), charset);
-									content = content.replace(oldText, newText);
-									Files.write(path, content.getBytes(charset));
-								}
-							} catch (IOException e) {
-								System.out.println("El archivo " + path + " ya existe");
-							}
+					String content;
+					try {
+						if (!Files.isDirectory(path)) {
+							content = new String(Files.readAllBytes(path), charset);
+							content = content.replace(oldText, newText);
+							Files.write(path, content.getBytes(charset));
 						}
-
-					});
+					} catch (IOException e) {
+						System.out.println("El archivo " + path + " ya existe");
+					}
+				}
+			});
 		} catch (IOException e) {
 			// permission issue
 			e.printStackTrace();
@@ -138,19 +134,17 @@ public class FileManager {
 	}
 
 	public static void createPackage(String packagePath, String packageName) {
-
 		String basePackagePath = packagePath;
-
 		String[] pf = packageName.split("\\.");
 		for (String fName : pf) {
-			createFolder(basePackagePath, fName);
+			boolean created = createFolder(basePackagePath, fName);
 			basePackagePath = basePackagePath + "\\" + fName;
 		}
 	}
 
-	public static void createFolder(String path, String folderName) {
+	public static boolean createFolder(String path, String folderName) {
 		File f = new File(path + "\\" + folderName);
-		f.mkdir();
+		return f.mkdir();
 	}
 
 	public static void renameMultipleFilesInFolder(String src, String oldText, String newText) {

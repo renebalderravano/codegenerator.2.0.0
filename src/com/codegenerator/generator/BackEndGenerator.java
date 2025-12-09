@@ -97,16 +97,14 @@ public class BackEndGenerator {
 					.collect(Collectors.toSet());
 
 			setProcessProgress(30);
-			for (Object schema : schemas) {
-
+			for(Object schema : schemas) {
+				
 				String schameName = ((String) schema).toLowerCase();
-
 				if (schameName.equals("dbo")) {
 					schameName = "";
 				}
-
+				
 				if (this.architecture.equals("mvc")) {
-
 					packageNameEntity = this.packageName + (schameName.equals("") ? "" : schameName) + ".model";
 					packageNameRepository = this.packageName + (schameName.equals("") ? "" : schameName)
 							+ ".repository";
@@ -152,13 +150,13 @@ public class BackEndGenerator {
 					FileManager.createPackage(this.packagePath, packageNameDTO);
 				}
 
-				Set<Object> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
-						.map(arr -> arr[1]).collect(Collectors.toSet());
+				Set<Object[]> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
+//						.map(arr -> arr[1])
+						.collect(Collectors.toSet());
 
 				if (!tablesBySchema.isEmpty()) {
-
-					for (Object table : tablesBySchema) {
-						String tableName = (String) table;
+					for (Object[] table : tablesBySchema) {
+						String tableName = (String) table[1];
 						printLog("Obteniendo columnas de la tabla " + tableName + "");
 						List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
 
@@ -169,11 +167,13 @@ public class BackEndGenerator {
 							tbl.setSchema(schameName);
 							tbl.setName(tableName);
 							tbl.setColumns(columns);
-							printLog("Generando modelo de la tabla " + tableName + "");
-
-							generateEntity(packageNameEntity, tbl);
+							
+							printLog("Generando modelo de la tabla " + (tableName + "") );
+							generateEntity(packageNameEntity, tbl, ( (boolean) table[2]) );
+							
 							generateModel(packageNameModel, tbl);
 							generateDTO(packageNameDTO, tbl);
+							
 							printLog("Generando repositorio de la tabla " + tableName + "");
 							generateRepository(packageNameEntity, packageNameRepository, tableName);
 							generateRepositoryImpl(packageNameEntity, packageNameRepository, packageNameRepositoryImpl,
@@ -186,11 +186,8 @@ public class BackEndGenerator {
 							printLog("Generando controlador de la tabla " + tableName + "");
 							generateController(packageNameDTO, packageNameController, tableName);
 						}
-
 					}
-
 				}
-
 			}
 
 			setProcessProgress(50);
@@ -447,13 +444,11 @@ public class BackEndGenerator {
 		return text;
 	}
 
-	private boolean generateEntity(String packageNameEntity, Table table) {
+	private boolean generateEntity(String packageNameEntity, Table table, boolean override) {
 		try {
-
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
-
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 
 			if (col.size() == 1) {
@@ -461,16 +456,22 @@ public class BackEndGenerator {
 				String pathModel = packagePath + "\\" + packageNameEntity.replace(".", "\\") + "\\"
 						+ formatText(tableName, true) // capitalizeText(tableName)
 						+ "Entity.java";
+				
 				File f = new File(pathModel);
-				if (f.exists()) {
-					printLog("");
+				
+				if (f.exists() && !override ) {
+					printLog("_______________________________");
 					return true;
-				} else if (columns == null)
+				} 
+				else if (columns == null)
 					columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-
+				
+				if(override)
+					f.delete();
+				
 				f.createNewFile();
+				
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
-
 				w.append("package " + packageNameEntity + ";\n\n");
 
 				w.append("import jakarta.persistence.*;\n");
@@ -491,21 +492,22 @@ public class BackEndGenerator {
 						String sfk = fk.get()[0].toString().toLowerCase();
 
 						if (!sfkCurrent.equals(sfk))
-							w.append(
-									"import " + this.packageName + ".infrastructure.adapters.output.persistence.entity."
+							w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity."
 											+ sfk + "." + formatText(colu.getTableReference(), true) + "Entity;\n");
 					}
 
 				}
 
 				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
-						+ getDateTime() + " */\n");
+						+ getDateTime() + "\n */\n");
 				w.append("@Entity\n");
+				
 				if (this.server.equals("sqlserver"))
 					w.append("@Table(name = \"[" + tableName + "]\" "
 							+ (tableSchema.equals("") ? "" : ", schema=\"" + tableSchema + "\"") + ")\n");
 				else
 					w.append("@Table(name = \"" + tableName + "\")\n");
+				
 				w.append("public class " + formatText(tableName, true) + "Entity { \n\n");
 
 				// Add properties
@@ -520,7 +522,7 @@ public class BackEndGenerator {
 							w.append("\t@Lob\n");
 
 						String len = "";
-						if ((column.getDataType().equals("varchar") || column.getDataType().equals("nvarchar"))
+						if ((column.getDataType().equals("char") || column.getDataType().equals("varchar") || column.getDataType().equals("nvarchar"))
 								&& column.getLength() != -1)
 							len = ", length = " + column.getLength() + " ";
 
@@ -545,20 +547,16 @@ public class BackEndGenerator {
 						w.append("\t@JoinColumn(name = \"" + column.getName() + "\")\n");
 						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
 								+ "DTO.class, srcFieldName = \"" + column.getName() + "\")\n");
-						w.append(
-								"\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
+						w.append("\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
 					}
 				}
 
 				// Add constructor
-
-				w.append("\tpublic " + formatText(tableName, true) + "Entity(){\n");
+				w.append("\tpublic " + formatText(tableName, true) + "Entity() {\n");
 				w.append("\t}\n\n");
 
 				// Add method setters and getters
-
 				for (Column column : columns) {
-
 					if (!column.getIsForeigKey()) {
 						w.append("\tpublic " + getDataTypeJava(this.server, column.getDataType()) + " get"
 								+ formatText(column.getName(), true) + "(){\n");

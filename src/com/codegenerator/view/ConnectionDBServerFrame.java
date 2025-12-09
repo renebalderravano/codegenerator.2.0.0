@@ -272,7 +272,7 @@ public class ConnectionDBServerFrame extends JFrame {
 
 		int i = 0;
 		for (Table t : rows) {
-			Object[] row = new Object[6];
+			Object[] row = new Object[8];
 			row[0] = t.getSchema();
 			row[1] = t.getName();
 			row[2] = true;

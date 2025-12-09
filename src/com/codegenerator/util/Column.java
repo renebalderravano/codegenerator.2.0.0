@@ -7,10 +7,10 @@ public class Column {
 	private Integer length;
 	private Integer numericPrecision;
 	private Integer numericScale;
-	private Boolean isNullable;
-	private Boolean isPrimaryKey;
-	private Boolean isForeigKey;
-	private Boolean autoIncrement;
+	private boolean isNullable;
+	private boolean isPrimaryKey;
+	private boolean isForeigKey;
+	private boolean autoIncrement;
 	private String tableReference;
 
 	public Column() {
@@ -60,33 +60,33 @@ public class Column {
 		return isNullable;
 	}
 
-	public void setIsNullable(Boolean isNullable) {
+	public void setIsNullable(boolean isNullable) {
 		this.isNullable = isNullable;
 	}
 
 
 
-	public Boolean getIsPrimaryKey() {
+	public boolean getIsPrimaryKey() {
 		return isPrimaryKey;
 	}
 
-	public void setIsPrimaryKey(Boolean isPrimaryKey) {
+	public void setIsPrimaryKey(boolean isPrimaryKey) {
 		this.isPrimaryKey = isPrimaryKey;
 	}
 
-	public Boolean getIsForeigKey() {
+	public boolean getIsForeigKey() {
 		return isForeigKey;
 	}
 
-	public void setIsForeignKey(Boolean isForeigKey) {
+	public void setIsForeignKey(boolean isForeigKey) {
 		this.isForeigKey = isForeigKey;
 	}
 
-	public Boolean getAutoIncrement() {
+	public boolean getAutoIncrement() {
 		return autoIncrement;
 	}
 
-	public void setAutoIncrement(Boolean autoIncrement) {
+	public void setAutoIncrement(boolean autoIncrement) {
 		this.autoIncrement = autoIncrement;
 	}
 
