@@ -124,16 +124,13 @@ public class JDBCManager {
 			query = query.replace("?1", database);
 //			if (server.equals("MySQL")) {
 //				query = "SELECT * FROM information_schema.tables " + "WHERE table_schema = '" + database + "'";
-//
 //			} else {
-//
 //				query = "use " + database + ";  SELECT * FROM information_schema.tables; ";
 //			}
 			st = getConnection().createStatement();
 			ResultSet rs = st.executeQuery(query); // Execute query
 			while (rs.next()) {
 				Table table = new Table();
-				
 				String schema = rs.getString("table_schema"); // Retrieve schema from db
 				table.setSchema(schema);				
 				String name = rs.getString("table_name"); // Retrieve name from db				

@@ -1,7 +1,10 @@
 package com.codegenerator.generator;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -53,12 +56,15 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		printLog("Creando Directorio para frontend..");
 		FileManager.createFolder(workspace, projectName);
 		setProcessProgress(30);
-		FileManager.copyDir(
-				PropertiesReading.folder_codegenerator_util
-						+ (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/[projectName]",
-				workspace + "\\" + projectName, true);
-		FileManager.replaceTextInFilesFolder(workspace + "\\" + projectName, "[projectName]", projectName);
-
+		
+		if(!Files.exists(Paths.get(workspace + "\\" + projectName))) {
+			FileManager.copyDir(
+					(PropertiesReading.folder_codegenerator_util + (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/[projectName]"),
+					workspace + "\\" + projectName,
+					true);
+			FileManager.replaceTextInFilesFolder(workspace + "\\" + projectName, "[projectName]", projectName);
+		}
+		
 		int availableTime = 50;
 		int i = 30;
 		for (Object[] table : tables) {
@@ -331,8 +337,11 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		
 		Set<Object> schemas = tables.stream().filter(arr -> arr.length > 0).map(arr -> arr[0])
 				.collect(Collectors.toSet());
-
+	
+		StringBuilder query = new StringBuilder();		
 		String option = "";
+		int id=1;
+		int i = 1;
 		for (Object schema : schemas) {
 			String schameName = ((String) schema).toLowerCase();
 
@@ -345,27 +354,65 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 			+ " label: '" + FieldNameFormatter.splitCamelCaseToString(schameName)+ "',\n"
 			+ " icon: 'pi pi-fw pi-user',\n"
 			+ " items: [\n";
-			Set<Object> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
-					.map(arr -> arr[1]).collect(Collectors.toSet());
+			List<Object> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
+					.map(arr -> arr[1]).collect(Collectors.toList());
 
+		query.append("INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
+			query.append("VALUES ");
+			query.append(" ( "+id+"");
+			query.append(" , '"+schameName+"' ");
+			query.append(", '' ");
+			query.append(", 'pi pi-fw pi-user' ");
+			query.append(", null ");
+			query.append(", null ");
+			query.append(", "+i+"");
+			query.append(", null  ");
+			query.append(", null ");
+			query.append(", 1 ");
+			query.append(", 1 ");
+			query.append(", GETDATE()");
+			query.append(" ) \n");
+			query.append("GO\n");
+			
 			if (!tablesBySchema.isEmpty()) {
 				
+				int j = 1;
 				for (Iterator iterator = tablesBySchema.iterator(); iterator.hasNext();) {
 					Object object = (Object) iterator.next();
+					id++;
 					option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(object.toString())
 					+ "', icon: 'pi pi-fw pi-user', routerLink: ['/" + FieldNameFormatter.toSnakeCase(object.toString())
 					+ "'] },\n";
-				}
-				
-				
+					
+					query.append("INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
+					query.append("VALUES ");
+					query.append(" ( "+id+"");
+					query.append(" , '"+FieldNameFormatter.splitCamelCaseToString(object.toString())+"' ");
+					query.append(", '' ");
+					query.append(", 'pi pi-fw pi-user' ");
+					query.append(", '/" + FieldNameFormatter.toSnakeCase(object.toString())+"' ");
+					query.append(", "+i+"");
+					query.append(", "+j+"");
+					query.append(", null  ");
+					query.append(", null ");
+					query.append(", 1 ");
+					query.append(", 1 ");
+					query.append(", GETDATE()  ");
+					query.append(" ) \n");
+					query.append("GO\n");
+					
+					j++;
+					
+				}				
 			}
 			
-			
+			i++;
+			id++;
 			option +=  " ]"
 			+ "\t\t\t\t\t },\n";
 		}
-		
 
+		System.out.println(query.toString());
 //		String option = "";
 //		for (Object[] table : tables) {
 //			String tableName = (String) table[1];
