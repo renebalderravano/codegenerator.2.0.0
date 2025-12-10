@@ -11,6 +11,8 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -88,7 +90,7 @@ public class BackEndGenerator {
 			String packageNameServiceImpl = "";
 			String packageNameController = "";
 
-			printLog("Creando Directorio para backend..");
+			printLog("Creando Directorio para backend.."); 
 
 			FileManager.createRootDirectory(workspace, projectName);
 			FileManager.createPackage(this.packagePath, this.packageName);
@@ -97,8 +99,12 @@ public class BackEndGenerator {
 					.collect(Collectors.toSet());
 
 			setProcessProgress(30);
+			
+			float timeProm = schemas.size()/20;
+			float progress = 30;
 			for(Object schema : schemas) {
 				
+				setProcessProgress((processProgress+=timeProm));
 				String schameName = ((String) schema).toLowerCase();
 				if (schameName.equals("dbo")) {
 					schameName = "";
@@ -191,212 +197,218 @@ public class BackEndGenerator {
 			}
 
 			setProcessProgress(50);
-			printLog("Preparando carpeta util...");
-			// Preparar carpteta util
-			String folderSrcUtil = PropertiesReading.folder_codegenerator_util
-					+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "//util";
-			System.out.println(folderSrcUtil);
-			String folderTrgUtil = packagePath + "\\" + packageName.replace(".", "\\") + "\\util";
-			FileManager.copyDir(folderSrcUtil, folderTrgUtil, false);
+			
+			
+			if(!Files.exists(Paths.get(workspace + "\\" + projectName))) {
+				printLog("Preparando carpeta util...");
+				// Preparar carpteta util
+				String folderSrcUtil = PropertiesReading.folder_codegenerator_util
+						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "//util";
+				System.out.println(folderSrcUtil);
+				String folderTrgUtil = packagePath + "\\" + packageName.replace(".", "\\") + "\\util";
+				FileManager.copyDir(folderSrcUtil, folderTrgUtil, false);
 
-			FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\") + "\\util",
-					"[packageName]", packageName);
+				FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\") + "\\util",
+						"[packageName]", packageName);
 
-			printLog("Preparando clase principal de spring Boot Application.java...");
+				printLog("Preparando clase principal de spring Boot Application.java...");
 
-			// Preparar clase principal de spring Boot Application.java
-			FileManager.copyDir(PropertiesReading.folder_codegenerator_util
-					+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/Application.java",
-					packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java", false);
+				// Preparar clase principal de spring Boot Application.java
+				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
+						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/Application.java",
+						packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java", false);
 
-			FileManager.replaceTextInFile(packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java",
-					"[packageName]", packageName);
-			setProcessProgress(60);
-			printLog("Preparando configuración hibernate...");
+				FileManager.replaceTextInFile(packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java",
+						"[packageName]", packageName);
+				setProcessProgress(60);
+				printLog("Preparando configuración hibernate...");
 
-			// preparar configuracion Hibernate
-			FileManager.copyDir(PropertiesReading.folder_codegenerator_util
-					+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/configuration",
-					packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", false);
-
-			StringBuilder builder = new StringBuilder();
-
-			for (Object[] table : tables) {
-				String tableName = (String) table[1];
-				builder.append("\t\t\tauth.requestMatchers(\"/" + FieldNameFormatter.toPascalCase(tableName)
-						+ "/**\").permitAll();\n");
-			}
-
-			FileManager.replaceTextInFilesFolder(
-					packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration\\SecurityConfig.java",
-					"//requestMatchers", builder.toString());
-
-			FileManager.replaceTextInFilesFolder(
-					packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", "[packageName]",
-					packageName);
-
-			setProcessProgress(70);
-			if (this.addOAuth2) {
-
-				printLog("Agregando Spring Security Oauth2...");
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/pom.xml",
-						workspace + "\\" + projectName + "\\pom.xml", false);
-
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/configuration",
+				// preparar configuracion Hibernate
+				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
+						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/configuration",
 						packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", false);
+
+				StringBuilder builder = new StringBuilder();
+
+				for (Object[] table : tables) {
+					String tableName = (String) table[1];
+					builder.append("\t\t\tauth.requestMatchers(\"/" + FieldNameFormatter.toPascalCase(tableName)
+							+ "/**\").permitAll();\n");
+				}
+
+				FileManager.replaceTextInFilesFolder(
+						packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration\\SecurityConfig.java",
+						"//requestMatchers", builder.toString());
 
 				FileManager.replaceTextInFilesFolder(
 						packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", "[packageName]",
 						packageName);
 
-				printLog("\tCreando tablas requeridas por Spring Security Oauth2...");
-				addTablesSpringSecurity(databaseName);
+				setProcessProgress(70);
+				if (this.addOAuth2) {
 
-				printLog("\tCreando modelo user para Spring Security Oauth2...");
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/model",
-						packagePath + "\\" + packageName.replace(".", "\\") + "\\model", false);
+					printLog("Agregando Spring Security Oauth2...");
+					FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/pom.xml",
+							workspace + "\\" + projectName + "\\pom.xml", false);
 
-				FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\") + "\\model",
-						"[packageName]", packageName);
+					FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/configuration",
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", false);
 
-				setProcessProgress(75);
-				printLog("\tCreando repository user para Spring Security Oauth2...");
-				FileManager.copyDir(
-						PropertiesReading.folder_codegenerator_util + "/mvc/security/repository/UserRepository.java",
-						packagePath + "\\" + packageName.replace(".", "\\") + "\\repository\\UserRepository.java",
-						false);
+					FileManager.replaceTextInFilesFolder(
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", "[packageName]",
+							packageName);
 
-				FileManager.replaceTextInFilesFolder(
-						packagePath + "\\" + packageName.replace(".", "\\") + "\\repository\\UserRepository.java",
-						"[packageName]", packageName);
+					printLog("\tCreando tablas requeridas por Spring Security Oauth2...");
+					addTablesSpringSecurity(databaseName);
 
-				FileManager.copyDir(
-						PropertiesReading.folder_codegenerator_util
-								+ "/mvc/security/repository/impl/UserRepositoryImpl.java",
-						packagePath + "\\" + packageName.replace(".", "\\")
-								+ "\\repository\\impl\\UserRepositoryImpl.java",
-						false);
+					printLog("\tCreando modelo user para Spring Security Oauth2...");
+					FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/model",
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\model", false);
 
-				FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\")
-						+ "\\repository\\impl\\UserRepositoryImpl.java", "[packageName]", packageName);
-				printLog("\tCreando service user para Spring Security Oauth2...");
-//				generateService("User");
-				printLog("\tCreando repository authority para Spring Security Oauth2...");
-//				generateRepository("Authority");
-//				generateService("Authority");
+					FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\") + "\\model",
+							"[packageName]", packageName);
 
-				printLog("\tCreando UserDetailsService para Spring Security Oauth2...");
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/UserDetailsServiceImpl.java",
-						packagePath + "\\" + packageName.replace(".", "\\")
-								+ "\\service\\impl\\UserDetailsServiceImpl.java",
-						false);
+					setProcessProgress(75);
+					printLog("\tCreando repository user para Spring Security Oauth2...");
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util + "/mvc/security/repository/UserRepository.java",
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\repository\\UserRepository.java",
+							false);
 
-				FileManager.replaceTextInFile(packagePath + "\\" + packageName.replace(".", "\\")
-						+ "\\service\\impl\\UserDetailsServiceImpl.java", "[packageName]", packageName);
-			} else {
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
-						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/pom.xml",
-						workspace + "\\" + projectName + "\\pom.xml", false);
-			}
+					FileManager.replaceTextInFilesFolder(
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\repository\\UserRepository.java",
+							"[packageName]", packageName);
 
-			setProcessProgress(80);
-			printLog("Preparando archivo pom.xml...");
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util
+									+ "/mvc/security/repository/impl/UserRepositoryImpl.java",
+							packagePath + "\\" + packageName.replace(".", "\\")
+									+ "\\repository\\impl\\UserRepositoryImpl.java",
+							false);
 
-			// preparar archivo pom.xml
-			FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[packageName]", packageName);
-			FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[projectName]", projectName);
+					FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\")
+							+ "\\repository\\impl\\UserRepositoryImpl.java", "[packageName]", packageName);
+					printLog("\tCreando service user para Spring Security Oauth2...");
+//					generateService("User");
+					printLog("\tCreando repository authority para Spring Security Oauth2...");
+//					generateRepository("Authority");
+//					generateService("Authority");
 
-			FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBgroupId]",
-					PropertiesReading.getProperty(jdbcManager.getServer() + ".groupId"));
-			FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBartifactId]",
-					PropertiesReading.getProperty(jdbcManager.getServer() + ".artifactId"));
-			FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBversion]",
-					PropertiesReading.getProperty(jdbcManager.getServer() + ".version"));
+					printLog("\tCreando UserDetailsService para Spring Security Oauth2...");
+					FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/UserDetailsServiceImpl.java",
+							packagePath + "\\" + packageName.replace(".", "\\")
+									+ "\\service\\impl\\UserDetailsServiceImpl.java",
+							false);
 
-			setProcessProgress(90);
-			printLog("Preparando archivo application.properties...");
-			// preparar archivo application.properties
-			FileManager.copyDir(
-					PropertiesReading.folder_codegenerator_util
-							+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/resources",
-					resourcesPath, false);
+					FileManager.replaceTextInFile(packagePath + "\\" + packageName.replace(".", "\\")
+							+ "\\service\\impl\\UserDetailsServiceImpl.java", "[packageName]", packageName);
+				} else {
+					FileManager.copyDir(PropertiesReading.folder_codegenerator_util
+							+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/pom.xml",
+							workspace + "\\" + projectName + "\\pom.xml", false);
+				}
 
-			String url = "jdbc:";
-			String prop = jdbcManager.getServer().trim() + ".datasource.driver-class-name";
+				setProcessProgress(80);
+				printLog("Preparando archivo pom.xml...");
 
-			String driver = PropertiesReading.getProperty(prop);
-			StringBuilder urlDB = new StringBuilder(
-					PropertiesReading.getProperty(jdbcManager.getServer() + ".datasource.url.databasename"));
-			url = urlDB.toString().replace("?1", jdbcManager.getHost()).replace("?2", jdbcManager.getPort())
-					.replace("?3", databaseName);
+				// preparar archivo pom.xml
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[packageName]", packageName);
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[projectName]", projectName);
 
-			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[driver]", driver);
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBgroupId]",
+						PropertiesReading.getProperty(jdbcManager.getServer() + ".groupId"));
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBartifactId]",
+						PropertiesReading.getProperty(jdbcManager.getServer() + ".artifactId"));
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBversion]",
+						PropertiesReading.getProperty(jdbcManager.getServer() + ".version"));
 
-			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[url]", url);
-			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[username]",
-					jdbcManager.getUsername());
-
-			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[password]",
-					jdbcManager.getPassword());
-
-			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[dialect]",
-					PropertiesReading.getProperty(jdbcManager.getServer() + ".dialect"));
-
-			FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[packageName]", packageName);
-
-			if (this.architecture.equals("hexagonal")) {
-				packageNameController = this.packageName + ".infrastructure.adapters.input.rest.security";
-				packageNameDTO = this.packageName + ".infrastructure.adapters.input.dto.security";
-				packageNameSevice = this.packageName + ".application.ports.input.security";
-				packageNameServiceImpl = this.packageName + ".application.usecases.security";
+				setProcessProgress(90);
+				printLog("Preparando archivo application.properties...");
+				// preparar archivo application.properties
 				FileManager.copyDir(
 						PropertiesReading.folder_codegenerator_util
-								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
-								+ "/auth/AuthController.java",
-						packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java", false);
+								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/resources",
+						resourcesPath, false);
 
-				FileManager.replaceTextInFile(
-						packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
-						"[packageName]", packageName);
+				String url = "jdbc:";
+				String prop = jdbcManager.getServer().trim() + ".datasource.driver-class-name";
 
-				FileManager.copyDir(
-						PropertiesReading.folder_codegenerator_util
-								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
-								+ "/auth/AuthService.java",
-						packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java", false);
+				String driver = PropertiesReading.getProperty(prop);
+				StringBuilder urlDB = new StringBuilder(
+						PropertiesReading.getProperty(jdbcManager.getServer() + ".datasource.url.databasename"));
+				url = urlDB.toString().replace("?1", jdbcManager.getHost()).replace("?2", jdbcManager.getPort())
+						.replace("?3", databaseName);
 
-				FileManager.replaceTextInFile(
-						packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java",
-						"[packageName]", packageName);
+				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[driver]", driver);
 
-				FileManager.copyDir(
-						PropertiesReading.folder_codegenerator_util
-								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
-								+ "/auth/AuthServiceImpl.java",
-						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
-						false);
+				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[url]", url);
+				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[username]",
+						jdbcManager.getUsername());
 
-				FileManager.replaceTextInFile(
-						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
-						"[packageName]", packageName);
+				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[password]",
+						jdbcManager.getPassword());
 
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
-						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "") + "/auth/AuthDTO.java",
-						packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", false);
+				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[dialect]",
+						PropertiesReading.getProperty(jdbcManager.getServer() + ".dialect"));
 
-				FileManager.replaceTextInFile(packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java",
-						"[packageName]", packageName);
+				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[packageName]", packageName);
 
-				FileManager.copyDir(
-						PropertiesReading.folder_codegenerator_util
-								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
-								+ "/auth/UserDetailsServiceImpl.java",
-						packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
-								+ "\\UserDetailsServiceImpl.java",
-						false);
+				if (this.architecture.equals("hexagonal")) {
+					packageNameController = this.packageName + ".infrastructure.adapters.input.rest.security";
+					packageNameDTO = this.packageName + ".infrastructure.adapters.input.dto.security";
+					packageNameSevice = this.packageName + ".application.ports.input.security";
+					packageNameServiceImpl = this.packageName + ".application.usecases.security";
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util
+									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+									+ "/auth/AuthController.java",
+							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java", false);
 
-				FileManager.replaceTextInFile(packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
-						+ "\\UserDetailsServiceImpl.java", "[packageName]", packageName);
+					FileManager.replaceTextInFile(
+							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
+							"[packageName]", packageName);
+
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util
+									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+									+ "/auth/AuthService.java",
+							packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java", false);
+
+					FileManager.replaceTextInFile(
+							packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java",
+							"[packageName]", packageName);
+
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util
+									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+									+ "/auth/AuthServiceImpl.java",
+							packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
+							false);
+
+					FileManager.replaceTextInFile(
+							packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
+							"[packageName]", packageName);
+
+					FileManager.copyDir(PropertiesReading.folder_codegenerator_util
+							+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "") + "/auth/AuthDTO.java",
+							packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", false);
+
+					FileManager.replaceTextInFile(packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java",
+							"[packageName]", packageName);
+
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util
+									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+									+ "/auth/UserDetailsServiceImpl.java",
+							packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
+									+ "\\UserDetailsServiceImpl.java",
+							false);
+
+					FileManager.replaceTextInFile(packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
+							+ "\\UserDetailsServiceImpl.java", "[packageName]", packageName);
+				}
+
+				
 			}
 
 		} catch (Exception e) {
