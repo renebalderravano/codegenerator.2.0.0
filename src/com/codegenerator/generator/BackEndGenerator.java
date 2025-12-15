@@ -177,8 +177,8 @@ public class BackEndGenerator {
 							printLog("Generando modelo de la tabla " + (tableName + "") );
 							generateEntity(packageNameEntity, tbl, ( (boolean) table[2]) );
 							
-							generateModel(packageNameModel, tbl);
-							generateDTO(packageNameDTO, tbl);
+							generateModel(packageNameModel, tbl, ( (boolean) table[2]));
+							generateDTO(packageNameDTO, tbl, ( (boolean) table[2]));
 							
 							printLog("Generando repositorio de la tabla " + tableName + "");
 							generateRepository(packageNameEntity, packageNameRepository, tableName);
@@ -614,7 +614,7 @@ public class BackEndGenerator {
 		return true;
 	}
 
-	private boolean generateModel(String packageNameModel, Table table) {
+	private boolean generateModel(String packageNameModel, Table table, boolean override) {
 		try {
 
 			String tableSchema = table.getSchema();
@@ -629,12 +629,17 @@ public class BackEndGenerator {
 						+ formatText(tableName, true) // capitalizeText(tableName)
 						+ "Model.java";
 				File f = new File(pathModel);
-				if (f.exists()) {
-					printLog("");
+				
+				if (f.exists() && !override ) {
+					printLog("_______________________________");
 					return true;
-				} else if (columns == null)
+				} 
+				else if (columns == null)
 					columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-
+				
+				if(override)
+					f.delete();
+				
 				f.createNewFile();
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
@@ -696,7 +701,7 @@ public class BackEndGenerator {
 		return true;
 	}
 
-	private boolean generateDTO(String packageNameDTO, Table table) {
+	private boolean generateDTO(String packageNameDTO, Table table, boolean override) {
 		try {
 
 			String tableSchema = table.getSchema();
@@ -710,12 +715,18 @@ public class BackEndGenerator {
 						+ formatText(tableName, true) // capitalizeText(tableName)
 						+ "DTO.java";
 				File f = new File(pathModel);
-				if (f.exists()) {
-					printLog("");
+				
+				if (f.exists() && !override ) {
+					printLog("_______________________________");
 					return true;
-				} else if (columns == null)
+				} 
+				else if (columns == null)
 					columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-
+				
+				if(override)
+					f.delete();
+				
+				
 				f.createNewFile();
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 

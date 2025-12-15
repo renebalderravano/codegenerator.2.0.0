@@ -37,6 +37,7 @@ public class FileManager {
 		          Path destination = Paths.get(dest, source.toString()
 		            .substring(src.replace("//", "/").length()));
 		          try {
+		        	  
 		              Files.copy(source, destination);
 		          } catch (IOException e) {
 		              e.printStackTrace();

@@ -354,7 +354,7 @@ public class DataBaseFrame extends JFrame {
 						.collect(Collectors.toSet());
 //				.findFirst();
 
-				BackEndGenerator backEndGenerator = new BackEndGenerator(server, databaseName, tablesSelected, jdbcManager,
+				BackEndGenerator backEndGenerator = new BackEndGenerator(server, databaseName, tables, jdbcManager,
 						workspace, backendName, txtPaquetePrincipal.getText(), arquitectura);
 
 				String frontendName = txtProjectName.getText() + "Frontend";
