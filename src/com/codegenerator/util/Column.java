@@ -10,6 +10,7 @@ public class Column {
 	private boolean isNullable;
 	private boolean isPrimaryKey;
 	private boolean isForeigKey;
+	private boolean isUnique;
 	private boolean autoIncrement;
 	private String tableReference;
 
@@ -80,6 +81,14 @@ public class Column {
 
 	public void setIsForeignKey(boolean isForeigKey) {
 		this.isForeigKey = isForeigKey;
+	}
+
+	public boolean getIsUnique() {
+		return isUnique;
+	}
+
+	public void setIsUnique(boolean isUnique) {
+		this.isUnique = isUnique;
 	}
 
 	public boolean getAutoIncrement() {

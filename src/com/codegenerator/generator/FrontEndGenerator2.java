@@ -56,15 +56,14 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		printLog("Creando Directorio para frontend..");
 		FileManager.createFolder(workspace, projectName);
 		setProcessProgress(30);
-		
-		if(!Files.exists(Paths.get(workspace + "\\" + projectName))) {
-			FileManager.copyDir(
-					(PropertiesReading.folder_codegenerator_util + (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/[projectName]"),
-					workspace + "\\" + projectName,
-					true);
+
+		if (!Files.exists(Paths.get(workspace + "\\" + projectName))) {
+			FileManager.copyDir((PropertiesReading.folder_codegenerator_util
+					+ (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/[projectName]"),
+					workspace + "\\" + projectName, true);
 			FileManager.replaceTextInFilesFolder(workspace + "\\" + projectName, "[projectName]", projectName);
 		}
-		
+
 		int availableTime = 50;
 		int i = 30;
 		for (Object[] table : tables) {
@@ -77,10 +76,13 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 			Table tbl = new Table();
 			tbl.setName(tableName);
 			tbl.setColumns(columns);
-			printLog("Generando servicio de la tabla " + tableName + "");
-			generateService(tableName);
-			printLog("Generando componente de la tabla " + tableName + "");
-			generateComponent(tbl);
+
+			if (((Boolean) table[2])) {
+				printLog("Generando servicio de la tabla " + tableName + "");
+				generateService(tableName);
+				printLog("Generando componente de la tabla " + tableName + "");
+				generateComponent(tbl);
+			}
 		}
 		setProcessProgress(80);
 		printLog("Aplicando configuración");
@@ -105,7 +107,6 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				+ ".service.ts";
 
 		try {
-
 			FileManager.copyDir(
 					PropertiesReading.folder_codegenerator_util + "//hexagonal/FrontEnd/service/[tableName].service.ts",
 					pathService, false);
@@ -188,7 +189,6 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		StringBuilder builder = new StringBuilder();
 		for (Column col : table.getColumns()) {
 
-			
 			builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
 		}
 
@@ -214,12 +214,11 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 					fkName = col.getName().replace("_id", "").replace("Id", "");
 
 				String foreignKeyColumn = FieldNameFormatter.formatText(fkName, false);
-				importsService.append(
-						"import { " + FieldNameFormatter.toPascalCase(foreignKeyColumn)
+				importsService.append("import { " + FieldNameFormatter.toPascalCase(foreignKeyColumn)
 						+ "Service } from '../../service/" + FieldNameFormatter.toSnakeCase(foreignKeyColumn)
 						+ ".service';\n");
-				declarationsOption.append(
-						"\topts" + FieldNameFormatter.toPascalCase(fkName) + ": any[] | undefined; \n");
+				declarationsOption
+						.append("\topts" + FieldNameFormatter.toPascalCase(fkName) + ": any[] | undefined; \n");
 				declarationsService.append("private " + foreignKeyColumn + "Service: "
 						+ FieldNameFormatter.toPascalCase(foreignKeyColumn) + "Service,\n");
 				executionsService
@@ -269,7 +268,8 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				PropertiesReading.folder_codegenerator_util + "//hexagonal/FrontEnd/component/[tableName].html",
 				mainComponentPath, false);
 
-		FileManager.replaceTextInFile(mainComponentPath, "KEBAB_CASE[tableName]", FieldNameFormatter.toKebabCase(tableName));
+		FileManager.replaceTextInFile(mainComponentPath, "KEBAB_CASE[tableName]",
+				FieldNameFormatter.toKebabCase(tableName));
 
 		/*
 		 * ROUTES
@@ -292,9 +292,9 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 		if (column.getIsPrimaryKey())
 			return "new FormControl(undefined)";
-		
+
 		if (column.getIsForeigKey())
-			return "new FormControl(undefined"+ (!column.getIsNullable() ? ", Validators.required" : "") + ")";
+			return "new FormControl(undefined" + (!column.getIsNullable() ? ", Validators.required" : "") + ")";
 
 		switch (column.getDataType()) {
 		case "int":
@@ -334,13 +334,13 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 	}
 
 	public Boolean configurar() {
-		
+
 		Set<Object> schemas = tables.stream().filter(arr -> arr.length > 0).map(arr -> arr[0])
 				.collect(Collectors.toSet());
-	
-		StringBuilder query = new StringBuilder();		
+
+		StringBuilder query = new StringBuilder();
 		String option = "";
-		int id=1;
+		int id = 1;
 		int i = 1;
 		for (Object schema : schemas) {
 			String schameName = ((String) schema).toLowerCase();
@@ -349,23 +349,22 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				schameName = "";
 				continue;
 			}
-			
-			option += "\t\t\t\t\t{\n "
-			+ " label: '" + FieldNameFormatter.splitCamelCaseToString(schameName)+ "',\n"
-			+ " icon: 'pi pi-fw pi-user',\n"
-			+ " items: [\n";
+
+			option += "\t\t\t\t\t{\n " + " label: '" + FieldNameFormatter.splitCamelCaseToString(schameName) + "',\n"
+					+ " icon: 'pi pi-fw pi-user',\n" + " items: [\n";
 			List<Object> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
 					.map(arr -> arr[1]).collect(Collectors.toList());
 
-		query.append("INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
+			query.append(
+					"INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
 			query.append("VALUES ");
-			query.append(" ( "+id+"");
-			query.append(" , '"+schameName+"' ");
+			query.append(" ( " + id + "");
+			query.append(" , '" + schameName + "' ");
 			query.append(", '' ");
 			query.append(", 'pi pi-fw pi-user' ");
 			query.append(", null ");
 			query.append(", null ");
-			query.append(", "+i+"");
+			query.append(", " + i + "");
 			query.append(", null  ");
 			query.append(", null ");
 			query.append(", 1 ");
@@ -373,26 +372,27 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 			query.append(", GETDATE()");
 			query.append(" ) \n");
 			query.append("GO\n");
-			
+
 			if (!tablesBySchema.isEmpty()) {
-				
+
 				int j = 1;
 				for (Iterator iterator = tablesBySchema.iterator(); iterator.hasNext();) {
 					Object object = (Object) iterator.next();
 					id++;
 					option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(object.toString())
-					+ "', icon: 'pi pi-fw pi-user', routerLink: ['/" + FieldNameFormatter.toSnakeCase(object.toString())
-					+ "'] },\n";
-					
-					query.append("INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
+							+ "', icon: 'pi pi-fw pi-user', routerLink: ['/"
+							+ FieldNameFormatter.toSnakeCase(object.toString()) + "'] },\n";
+
+					query.append(
+							"INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
 					query.append("VALUES ");
-					query.append(" ( "+id+"");
-					query.append(" , '"+FieldNameFormatter.splitCamelCaseToString(object.toString())+"' ");
+					query.append(" ( " + id + "");
+					query.append(" , '" + FieldNameFormatter.splitCamelCaseToString(object.toString()) + "' ");
 					query.append(", '' ");
 					query.append(", 'pi pi-fw pi-user' ");
-					query.append(", '/" + FieldNameFormatter.toSnakeCase(object.toString())+"' ");
-					query.append(", "+i+"");
-					query.append(", "+j+"");
+					query.append(", '/" + FieldNameFormatter.toSnakeCase(object.toString()) + "' ");
+					query.append(", " + i + "");
+					query.append(", " + j + "");
 					query.append(", null  ");
 					query.append(", null ");
 					query.append(", 1 ");
@@ -400,16 +400,15 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 					query.append(", GETDATE()  ");
 					query.append(" ) \n");
 					query.append("GO\n");
-					
+
 					j++;
-					
-				}				
+
+				}
 			}
-			
+
 			i++;
 			id++;
-			option +=  " ]"
-			+ "\t\t\t\t\t },\n";
+			option += " ]" + "\t\t\t\t\t },\n";
 		}
 
 		System.out.println(query.toString());

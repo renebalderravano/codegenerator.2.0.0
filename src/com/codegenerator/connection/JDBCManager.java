@@ -188,7 +188,7 @@ public class JDBCManager {
 			ResultSet rs = st.executeQuery(query); 
 			while (rs.next()) {
 				Column column = new Column();
-				column.setName(rs.getString("column_name"));
+				column.setName(rs.getString("COLUMN_name"));
 				column.setDataType(rs.getString("data_type"));
 				column.setNumericPrecision(rs.getInt("NUMERIC_PRECISION"));
 				column.setNumericScale(rs.getInt("NUMERIC_SCALE"));
@@ -197,6 +197,7 @@ public class JDBCManager {
 				if (rs.getString("column_key") != null) {
 					column.setIsPrimaryKey(rs.getString("column_key").equals("PRI"));
 					column.setIsForeignKey(rs.getString("column_key").equals("MUL"));
+					column.setIsUnique(rs.getString("column_key").equals("UNI"));
 				}
 				
 //				column.setName(rs.getString("column_name"));

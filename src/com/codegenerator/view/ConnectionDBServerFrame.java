@@ -230,6 +230,7 @@ public class ConnectionDBServerFrame extends JFrame {
 		cbDatabase.addItemListener(new ItemListener() {
 			public void itemStateChanged(ItemEvent e) {
 				if (e.getStateChange() == ItemEvent.SELECTED) {
+					tableSelected = new HashSet<Object[]>();
 					List<Table> tablesWithSchema = c.getTableWithSchemaFromDataBase(e.getItem().toString());
 					createTableWithSchema(tablesWithSchema, columns);
 //					List<String> tables = c.getTableFromDataBase(e.getItem().toString());
