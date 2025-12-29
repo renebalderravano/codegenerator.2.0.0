@@ -90,7 +90,7 @@ public class BackEndGenerator {
 			String packageNameServiceImpl = "";
 			String packageNameController = "";
 
-			printLog("Creando Directorio para backend.."); 
+			printLog("Creando Directorio para backend..");
 
 			FileManager.createRootDirectory(workspace, projectName);
 			FileManager.createPackage(this.packagePath, this.packageName);
@@ -99,17 +99,17 @@ public class BackEndGenerator {
 					.collect(Collectors.toSet());
 
 			setProcessProgress(30);
-			
-			float timeProm = schemas.size()/20;
+
+			float timeProm = schemas.size() / 20;
 			float progress = 30;
-			for(Object schema : schemas) {
-				
-				setProcessProgress((processProgress+=timeProm));
+			for (Object schema : schemas) {
+				progress += timeProm;
+
 				String schameName = ((String) schema).toLowerCase();
 				if (schameName.equals("dbo")) {
 					schameName = "";
 				}
-				
+
 				if (this.architecture.equals("mvc")) {
 					packageNameEntity = this.packageName + (schameName.equals("") ? "" : schameName) + ".model";
 					packageNameRepository = this.packageName + (schameName.equals("") ? "" : schameName)
@@ -162,24 +162,25 @@ public class BackEndGenerator {
 
 				if (!tablesBySchema.isEmpty()) {
 					for (Object[] table : tablesBySchema) {
+
+						setProcessProgress((int) progress);
 						String tableName = (String) table[1];
 						printLog("Obteniendo columnas de la tabla " + tableName + "");
 						List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
 
 						List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
-
-						if (col.size() == 1) {
+//						if (col.size() == 1) {
 							Table tbl = new Table();
 							tbl.setSchema(schameName);
 							tbl.setName(tableName);
 							tbl.setColumns(columns);
-							
-							printLog("Generando modelo de la tabla " + (tableName + "") );
-							generateEntity(packageNameEntity, tbl, ( (boolean) table[2]) );
-							
-							generateModel(packageNameModel, tbl, ( (boolean) table[2]));
-							generateDTO(packageNameDTO, tbl, ( (boolean) table[2]));
-							
+
+							printLog("Generando modelo de la tabla " + (tableName + ""));
+							generateEntity(packageNameEntity, tbl, ((boolean) table[2]));
+
+							generateModel(packageNameModel, tbl, ((boolean) table[2]));
+							generateDTO(packageNameDTO, tbl, ((boolean) table[2]));
+
 							printLog("Generando repositorio de la tabla " + tableName + "");
 							generateRepository(packageNameEntity, packageNameRepository, tableName);
 							generateRepositoryImpl(packageNameEntity, packageNameRepository, packageNameRepositoryImpl,
@@ -191,15 +192,14 @@ public class BackEndGenerator {
 
 							printLog("Generando controlador de la tabla " + tableName + "");
 							generateController(packageNameDTO, packageNameController, tableName);
-						}
+//						}
 					}
 				}
 			}
 
 			setProcessProgress(50);
-			
-			
-			if(!Files.exists(Paths.get(workspace + "\\" + projectName))) {
+
+			if (!Files.exists(Paths.get(workspace + "\\" + projectName))) {
 				printLog("Preparando carpeta util...");
 				// Preparar carpteta util
 				String folderSrcUtil = PropertiesReading.folder_codegenerator_util
@@ -214,12 +214,15 @@ public class BackEndGenerator {
 				printLog("Preparando clase principal de spring Boot Application.java...");
 
 				// Preparar clase principal de spring Boot Application.java
-				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
-						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/Application.java",
+				FileManager.copyDir(
+						PropertiesReading.folder_codegenerator_util
+								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc")
+								+ "/Application.java",
 						packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java", false);
 
-				FileManager.replaceTextInFile(packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java",
-						"[packageName]", packageName);
+				FileManager.replaceTextInFile(
+						packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java", "[packageName]",
+						packageName);
 				setProcessProgress(60);
 				printLog("Preparando configuración hibernate...");
 
@@ -265,13 +268,15 @@ public class BackEndGenerator {
 					FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/security/model",
 							packagePath + "\\" + packageName.replace(".", "\\") + "\\model", false);
 
-					FileManager.replaceTextInFilesFolder(packagePath + "\\" + packageName.replace(".", "\\") + "\\model",
-							"[packageName]", packageName);
+					FileManager.replaceTextInFilesFolder(
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\model", "[packageName]",
+							packageName);
 
 					setProcessProgress(75);
 					printLog("\tCreando repository user para Spring Security Oauth2...");
 					FileManager.copyDir(
-							PropertiesReading.folder_codegenerator_util + "/mvc/security/repository/UserRepository.java",
+							PropertiesReading.folder_codegenerator_util
+									+ "/mvc/security/repository/UserRepository.java",
 							packagePath + "\\" + packageName.replace(".", "\\") + "\\repository\\UserRepository.java",
 							false);
 
@@ -295,7 +300,8 @@ public class BackEndGenerator {
 //					generateService("Authority");
 
 					printLog("\tCreando UserDetailsService para Spring Security Oauth2...");
-					FileManager.copyDir(PropertiesReading.folder_codegenerator_util + "/mvc/UserDetailsServiceImpl.java",
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util + "/mvc/UserDetailsServiceImpl.java",
 							packagePath + "\\" + packageName.replace(".", "\\")
 									+ "\\service\\impl\\UserDetailsServiceImpl.java",
 							false);
@@ -312,8 +318,10 @@ public class BackEndGenerator {
 				printLog("Preparando archivo pom.xml...");
 
 				// preparar archivo pom.xml
-				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[packageName]", packageName);
-				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[projectName]", projectName);
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[packageName]",
+						packageName);
+				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[projectName]",
+						projectName);
 
 				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBgroupId]",
 						PropertiesReading.getProperty(jdbcManager.getServer() + ".groupId"));
@@ -325,9 +333,8 @@ public class BackEndGenerator {
 				setProcessProgress(90);
 				printLog("Preparando archivo application.properties...");
 				// preparar archivo application.properties
-				FileManager.copyDir(
-						PropertiesReading.folder_codegenerator_util
-								+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/resources",
+				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
+						+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "//mvc") + "/resources",
 						resourcesPath, false);
 
 				String url = "jdbc:";
@@ -362,7 +369,8 @@ public class BackEndGenerator {
 							PropertiesReading.folder_codegenerator_util
 									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
 									+ "/auth/AuthController.java",
-							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java", false);
+							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
+							false);
 
 					FileManager.replaceTextInFile(
 							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
@@ -389,12 +397,15 @@ public class BackEndGenerator {
 							packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
 							"[packageName]", packageName);
 
-					FileManager.copyDir(PropertiesReading.folder_codegenerator_util
-							+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "") + "/auth/AuthDTO.java",
+					FileManager.copyDir(
+							PropertiesReading.folder_codegenerator_util
+									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
+									+ "/auth/AuthDTO.java",
 							packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", false);
 
-					FileManager.replaceTextInFile(packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java",
-							"[packageName]", packageName);
+					FileManager.replaceTextInFile(
+							packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", "[packageName]",
+							packageName);
 
 					FileManager.copyDir(
 							PropertiesReading.folder_codegenerator_util
@@ -408,7 +419,6 @@ public class BackEndGenerator {
 							+ "\\UserDetailsServiceImpl.java", "[packageName]", packageName);
 				}
 
-				
 			}
 
 		} catch (Exception e) {
@@ -468,21 +478,20 @@ public class BackEndGenerator {
 				String pathModel = packagePath + "\\" + packageNameEntity.replace(".", "\\") + "\\"
 						+ formatText(tableName, true) // capitalizeText(tableName)
 						+ "Entity.java";
-				
+
 				File f = new File(pathModel);
-				
-				if (f.exists() && !override ) {
+
+				if (f.exists() && !override) {
 					printLog("_______________________________");
 					return true;
-				} 
-				else if (columns == null)
+				} else if (columns == null)
 					columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-				
-				if(override)
+
+				if (override)
 					f.delete();
-				
+
 				f.createNewFile();
-				
+
 				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 				w.append("package " + packageNameEntity + ";\n\n");
 
@@ -504,8 +513,7 @@ public class BackEndGenerator {
 						String sfk = fk.get()[0].toString().toLowerCase();
 
 						if (!sfkCurrent.equals(sfk))
-							w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity."
-											+ sfk + "." + formatText(colu.getTableReference(), true) + "Entity;\n");
+							w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + sfk + "." + formatText(colu.getTableReference(), true) + "Entity;\n");
 					}
 
 				}
@@ -513,13 +521,13 @@ public class BackEndGenerator {
 				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
 						+ getDateTime() + "\n */\n");
 				w.append("@Entity\n");
-				
+
 				if (this.server.equals("sqlserver"))
 					w.append("@Table(name = \"[" + tableName + "]\" "
 							+ (tableSchema.equals("") ? "" : ", schema=\"" + tableSchema + "\"") + ")\n");
 				else
 					w.append("@Table(name = \"" + tableName + "\")\n");
-				
+
 				w.append("public class " + formatText(tableName, true) + "Entity { \n\n");
 
 				// Add properties
@@ -534,17 +542,21 @@ public class BackEndGenerator {
 							w.append("\t@Lob\n");
 
 						String len = "";
-						if ((column.getDataType().equals("char") || column.getDataType().equals("varchar") || column.getDataType().equals("nvarchar"))
-								&& column.getLength() != -1)
+						if ((column.getDataType().equals("char") || column.getDataType().equals("varchar")
+								|| column.getDataType().equals("nvarchar")) && column.getLength() != -1)
 							len = ", length = " + column.getLength() + " ";
 
 						String scalPre = "";
 						if ((column.getDataType().equals("decimal") || column.getDataType().equals("numeric"))
 								&& column.getLength() != -1)
-						scalPre = ", precision = " + column.getNumericPrecision() + ", scale = "
+							scalPre = ", precision = " + column.getNumericPrecision() + ", scale = "
 									+ column.getNumericScale() + " ";
 
-						w.append("\t@Column(name = \"" + column.getName() + "\"" + len + scalPre + ")\n");
+						String strUnique = "";
+						if ((column.getIsUnique()))
+							strUnique = ", unique = " + column.getIsUnique() + " ";
+
+						w.append("\t@Column(name = \"" + column.getName() + "\"" + strUnique + len + scalPre + ")\n");
 						w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 								+ formatText(column.getName(), false) + ";\n\n");
 					} else {
@@ -559,7 +571,8 @@ public class BackEndGenerator {
 						w.append("\t@JoinColumn(name = \"" + column.getName() + "\")\n");
 						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
 								+ "DTO.class, srcFieldName = \"" + column.getName() + "\")\n");
-						w.append("\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
+						w.append(
+								"\tprivate " + foreignKeyColumn + "Entity" + " " + formatText(fkName, false) + ";\n\n");
 					}
 				}
 
@@ -603,7 +616,122 @@ public class BackEndGenerator {
 				w.append("}");
 
 				w.close();
+			} else {
+
+//				CREAR PRIMARY KEY EMBEDDED
+				createPrimaryKeyEmbedded(packageNameEntity, table, override);
+				
+//				CREAR ENTITY
+				createRelationshipManyToMany(packageNameEntity, table, override);
+
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
+
+		return true;
+	}
+
+	private boolean createPrimaryKeyEmbedded(String packageNameEntity, Table table, boolean override) {
+
+		try {
+			String tableSchema = table.getSchema();
+			String tableName = table.getName();
+
+			String pathModel = packagePath + "\\" + packageNameEntity.replace(".", "\\") + "\\"
+					+ formatText(tableName, true) // capitalizeText(tableName)
+					+ "Id.java";
+
+			File f = new File(pathModel);
+
+			if (f.exists() && !override) {
+				printLog("_______________________________");
+				return true;
+			}
+
+			if (override)
+				f.delete();
+
+			f.createNewFile();
+
+			try (Writer w = new OutputStreamWriter(new FileOutputStream(f))) {
+				w.append("package " + packageNameEntity + ";\n\n");
+				w.append("import jakarta.persistence.*;\n");
+				w.append("import java.io.Serializable;\n");
+				w.append("import java.util.Objects;\n");
+				w.append("@Embeddable\n");
+				w.append("public class " + formatText(tableName, true) + "Id implements Serializable {\n\n");
+				w.append("\tprivate static final long serialVersionUID = 1L;\n");
+				List<Column> col = table.getColumns().stream().filter(x -> x.getIsPrimaryKey()).toList();
+				for (Column column : col) {
+					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
+							+ formatText(column.getName(), false) + ";\n\n");
+				}
+
+				// Constructor vacío
+				w.append("\tpublic " + formatText(tableName, true) + "Id() {\n}\n\n");
+				w.append("\tpublic " + formatText(tableName, true) + "Id(");
+				int i = 0;
+				for (Column column : col) {
+					w.append("\t\t" + getDataTypeJava(this.server, column.getDataType()) + " "
+							+ formatText(column.getName(), false) + (i == col.size()-1 ? "" : ",") + " \n");
+					i++;
+				}
+				w.append("\t){\n");
+				for (Column column : col) {
+					w.append("\t\tthis." + formatText(column.getName(), false) + " = " + formatText(column.getName(), false)
+							+ ";\n");
+				}
+				w.append("\t}\n");
+
+				// getters/setters
+				for (Column column : col) {
+					w.append("\tpublic " + getDataTypeJava(this.server, column.getDataType()) + " get"
+							+ formatText(column.getName(), true) + "(){\n");
+					w.append("\t\treturn " + formatText(column.getName(), false) + ";\n");
+					w.append("\t}\n\n");
+
+					w.append("\tpublic void set" + formatText(column.getName().toLowerCase(), true) + "("
+							+ getDataTypeJava(this.server, column.getDataType()) + " " + formatText(column.getName(), false)
+							+ "\t){\n");
+					w.append("\t\tthis." + formatText(column.getName(), false) + " = " + formatText(column.getName(), false)
+							+ ";\n");
+					w.append("\t}\n\n");
+				}
+
+				w.append("\t@Override\n");
+				w.append("\tpublic boolean equals(Object o) {\n");
+				w.append("\t\tif(this == o) return true;\n");
+				w.append("\t\t\tif( !(o instanceof " + formatText(tableName, true) + "Id)) return false;\n");
+				w.append(" \t\t\t\t" + formatText(tableName, true) + "Id that = (" + formatText(tableName, true)+ "Id) o;\n");
+				w.append("\t\treturn ");
+				i = 0;
+				for (Column column : col) {
+					w.append("\t\t\tObjects.equals(" + formatText(column.getName(), false) + ", that."
+							+ formatText(column.getName(), false) + ")\n");
+					w.append(i == col.size()-1 ? "\t\t\t;\n" : "&&");
+					i++;
+				}
+				w.append("\t}\n");
+
+				w.append("\t\t@Override\n");
+				w.append("\t\tpublic int hashCode() {\n");
+
+				w.append("\t\t\treturn \n");
+
+				w.append("\t\t\tObjects.hash(");
+				i = 0;
+				for (Column column : col) {
+					w.append( formatText(column.getName(), false));
+					w.append(i == col.size()-1 ? "\t\t\t);\n" : ",");
+					i++;
+				}
+				w.append("\n\t\t}\n");
+//		
+				w.append("}\n");
+			}
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -614,55 +742,223 @@ public class BackEndGenerator {
 		return true;
 	}
 
+	private boolean createRelationshipManyToMany(String packageNameEntity, Table table, boolean override) {
+
+		try {
+			String tableSchema = table.getSchema();
+			String tableName = table.getName();
+
+			String pathModel = packagePath + "\\" + packageNameEntity.replace(".", "\\") + "\\"
+					+ formatText(tableName, true) // capitalizeText(tableName)
+					+ "Entity.java";
+
+			File f = new File(pathModel);
+
+			if (f.exists() && !override) {
+				printLog("_______________________________");
+				return true;
+			}
+
+			if (override)
+				f.delete();
+
+			f.createNewFile();
+
+			try (Writer w = new OutputStreamWriter(new FileOutputStream(f))) {
+				w.append("package " + packageNameEntity + ";\n\n");
+				
+				w.append("import jakarta.persistence.*;\n");
+				
+				List<Column> cols = table.getColumns().stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
+
+				if (cols.size() > 0) {
+					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
+					String sfkCurrent = fk.get()[0].toString().toLowerCase();
+					w.append("import " + this.packageName + ".infrastructure.adapters.input.dto." + sfkCurrent + "."
+							+ formatText(tableName, true) + "DTO;\n");
+					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
+
+					for (Iterator iterator = cols.iterator(); iterator.hasNext();) {
+						Column colu = (Column) iterator.next();
+
+						fk = tables.stream().filter(tbl -> tbl[1].equals(colu.getTableReference())).findFirst();
+						String sfk = fk.get()[0].toString().toLowerCase();
+
+						if (!sfkCurrent.equals(sfk))
+							w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + sfk + "." + formatText(colu.getTableReference(), true) + "Entity;\n");
+					}
+
+				}
+				w.append("/**\r\n" 
+						+ " * \r\n" 
+						+ " * @author José Rene Balderravano Hernández\r\n" 
+						+ " * @since " + getDateTime() + "\n"
+						+ " */\n");
+				w.append("@Entity\n");
+
+				if (this.server.equals("sqlserver"))
+					w.append("@Table(name = \"[" + tableName + "]\" "
+							+ (tableSchema.equals("") ? "" : ", schema=\"" + tableSchema + "\"") + ")\n");
+				else
+					w.append("@Table(name = \"" + tableName + "\")\n");
+				
+				w.append("public class " + formatText(tableName, true) + "Entity{\n\n");
+				
+				w.append("\tprivate " + formatText(tableName, true) + "Id " + "id;\n\n");
+				
+				List<Column> col = table.getColumns().stream().filter(x -> !x.getIsPrimaryKey()).toList();
+				for (Column column : col) {
+					if (!column.getIsForeigKey()) {
+						if (column.getDataType().equals("varbinary"))
+							w.append("\t@Lob\n");
+
+						String len = "";
+						if ((column.getDataType().equals("char") || column.getDataType().equals("varchar")
+								|| column.getDataType().equals("nvarchar")) && column.getLength() != -1)
+							len = ", length = " + column.getLength() + " ";
+
+						String scalPre = "";
+						if ((column.getDataType().equals("decimal") || column.getDataType().equals("numeric"))
+								&& column.getLength() != -1)
+							scalPre = ", precision = " + column.getNumericPrecision() + ", scale = "
+									+ column.getNumericScale() + " ";
+
+						String strUnique = "";
+						if ((column.getIsUnique()))
+							strUnique = ", unique = " + column.getIsUnique() + " ";
+
+						w.append("\t@Column(name = \"" + column.getName() + "\"" + strUnique + len + scalPre + ")\n");
+						w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
+								+ formatText(column.getName(), false) + ";\n\n");
+					} else {
+						String fkName = "";
+						if (column.getName().startsWith("id"))
+							fkName = column.getName().substring(2);
+						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
+							fkName = column.getName().replace("_id", "").replace("Id", "");
+
+						String foreignKeyColumn = formatText(fkName, true);
+						w.append("\t@ManyToOne\n");
+						w.append("\t@MapsId(\"" + column.getName() + "\")\n");
+						w.append("\t@JoinColumn(name = \"" + column.getName() + "\")\n");
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
+								+ "DTO.class, srcFieldName = \"" + column.getName() + "\")\n");
+						w.append(
+								"\tprivate " + formatText(column.getTableReference(), true) + "Entity" + " " + formatText(fkName, false) + ";\n\n");
+					}
+				}
+
+				// Constructor vacío
+				w.append("\tpublic " + formatText(tableName, true) + "Entity() {\n}\n\n");
+				
+				w.append("\tpublic " + formatText(tableName, true) + "Id get"
+						+ formatText(tableName, true) + "Id(){\n");
+				w.append("\t\treturn id;\n");
+				w.append("\t}\n\n");
+
+				w.append("\tpublic void set" + formatText(tableName, true) + "Id("
+						+ formatText(tableName, true) + "Id "
+						+ formatText(tableName, false) + "Id){\n");
+				w.append("\t\tthis.id = "
+						+ formatText(tableName, false) + "Id;\n");
+				w.append("\t}\n\n"); 
+
+				// getters/setters
+				for (Column column : col) {
+					if (!column.getIsForeigKey()) {
+						w.append("\tpublic " + getDataTypeJava(this.server, column.getDataType()) + " get"
+								+ formatText(column.getName(), true) + "(){\n");
+						w.append("\t\treturn " + formatText(column.getName(), false) + ";\n");
+						w.append("\t}\n\n");
+
+						w.append("\tpublic void set" + formatText(column.getName().toLowerCase(), true) + "("
+								+ getDataTypeJava(this.server, column.getDataType()) + " "
+								+ formatText(column.getName(), false) + "){\n");
+						w.append("\t\tthis." + formatText(column.getName(), false) + " = "
+								+ formatText(column.getName(), false) + ";\n");
+						w.append("\t}\n\n");
+					} else {
+						String fkName = "";
+						if (column.getName().startsWith("id"))
+							fkName = column.getName().substring(2);
+						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
+							fkName = column.getName().replace("_id", "").replace("Id", "");
+
+						String foreignKeyColumn = formatText(fkName, true);
+						w.append("\tpublic " + formatText(column.getTableReference(), true) + "Entity" + " get" + foreignKeyColumn + "(){\n");
+						w.append("\t\treturn " + formatText(fkName, false) + ";\n");
+						w.append("\t}\n\n");
+
+						w.append("\tpublic void set" + foreignKeyColumn + "(" +  formatText(column.getTableReference(), true) + "Entity" + " "
+								+ formatText(fkName, false) + "){\n");
+						w.append("\t\tthis." + formatText(fkName, false) + " = " + formatText(fkName, false) + ";\n");
+						w.append("\t}\n\n");
+					}
+				}
+
+//		
+				w.append("}\n");
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+
+			return false;
+		}
+
+		return true;	
+	}
+	
 	private boolean generateModel(String packageNameModel, Table table, boolean override) {
 		try {
 
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
+			String pathModel = packagePath + "\\" + packageNameModel.replace(".", "\\") + "\\"
+					+ formatText(tableName, true) // capitalizeText(tableName)
+					+ "Model.java";
+			File f = new File(pathModel);
+
+			if (f.exists() && !override) {
+				printLog("_______________________________");
+				return true;
+			} else if (columns == null)
+				columns = jdbcManager.getColumnsByTable(databaseName, tableName);
+
+			if (override)
+				f.delete();
+
+			f.createNewFile();
+			Writer w = new OutputStreamWriter(new FileOutputStream(f));
+
+			w.append("package " + packageNameModel + ";\n\n");
+
+			List<Column> cols = columns.stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
+
+			if (cols.size() > 0) {
+				Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
+				String sfk = fk.get()[0].toString().toLowerCase();
+				w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + sfk
+						+ "." + formatText(tableName, true) + "Entity;\n");
+				w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
+			}
+
+			w.append("import lombok.Getter;\n");
+			w.append("import lombok.Setter;\n\n");
+
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
+			w.append("@Getter\n");
+			w.append("@Setter\n");
+			w.append("public class " + formatText(tableName, true) + "Model { \n\n");
 
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 
 			if (col.size() == 1) {
 
-				String pathModel = packagePath + "\\" + packageNameModel.replace(".", "\\") + "\\"
-						+ formatText(tableName, true) // capitalizeText(tableName)
-						+ "Model.java";
-				File f = new File(pathModel);
-				
-				if (f.exists() && !override ) {
-					printLog("_______________________________");
-					return true;
-				} 
-				else if (columns == null)
-					columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-				
-				if(override)
-					f.delete();
-				
-				f.createNewFile();
-				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
-				w.append("package " + packageNameModel + ";\n\n");
-
-				List<Column> cols = columns.stream().filter(c -> c.getIsForeigKey()).collect(Collectors.toList());
-
-				if (cols.size() > 0) {
-					Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(tableName)).findFirst();
-					String sfk = fk.get()[0].toString().toLowerCase();
-					w.append("import " + this.packageName + ".infrastructure.adapters.output.persistence.entity." + sfk
-							+ "." + formatText(tableName, true) + "Entity;\n");
-					w.append("import " + this.packageName + ".util.MapperMapping;\n\n");
-				}
-
-				w.append("import lombok.Getter;\n");
-				w.append("import lombok.Setter;\n\n");
-
-				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
-						+ getDateTime() + " */\n");
-				w.append("@Getter\n");
-				w.append("@Setter\n");
-				w.append("public class " + formatText(tableName, true) + "Model { \n\n");
 
 				// Add properties
 				for (Column column : columns) {
@@ -684,13 +980,37 @@ public class BackEndGenerator {
 
 				// Add constructor
 
-				w.append("\tpublic " + formatText(tableName, true) + "Model (){\n");
-				w.append("\t}\n\n");
-
-				w.append("}");
-
-				w.close();
 			}
+			else {
+				
+				List<Column> cols1 = columns.stream().filter(x -> !x.getIsPrimaryKey()).toList();
+				
+				for (Column column : cols1) {
+					if (column.getIsForeigKey()) {
+						String fkName = "";
+						if (column.getName().startsWith("id"))
+							fkName = column.getName().substring(2);
+						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
+							fkName = column.getName().replace("_id", "").replace("Id", "");
+
+						String foreignKeyColumn = formatText(fkName, true) + "";
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
+								+ "Entity.class,  srcFieldName = \"" + formatText(fkName, false) + ".id\")\n");
+					}
+
+					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
+							+ formatText(column.getName(), false) + ";\n\n");
+				}
+			}
+			
+			
+
+			w.append("\tpublic " + formatText(tableName, true) + "Model (){\n");
+			w.append("\t}\n\n");
+
+			w.append("}");
+
+			w.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -707,65 +1027,68 @@ public class BackEndGenerator {
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
+			
+			String pathModel = packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\"
+					+ formatText(tableName, true) // capitalizeText(tableName)
+					+ "DTO.java";
+			File f = new File(pathModel);
+
+			if (f.exists() && !override) {
+				printLog("_______________________________");
+				return true;
+			} else if (columns == null)
+				columns = jdbcManager.getColumnsByTable(databaseName, tableName);
+
+			if (override)
+				f.delete();
+
+			f.createNewFile();
+			Writer w = new OutputStreamWriter(new FileOutputStream(f));
+
+			w.append("package " + packageNameDTO + ";\n\n");
+
+			w.append("import lombok.Getter;\n");
+			w.append("import lombok.Setter;\n");
+
+			w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
+					+ getDateTime() + " */\n");
+			w.append("@Getter\n");
+			w.append("@Setter\n");
+			w.append("public class " + formatText(tableName, true) + "DTO { \n\n");
 
 			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
 			if (col.size() == 1) {
 
-				String pathModel = packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\"
-						+ formatText(tableName, true) // capitalizeText(tableName)
-						+ "DTO.java";
-				File f = new File(pathModel);
-				
-				if (f.exists() && !override ) {
-					printLog("_______________________________");
-					return true;
-				} 
-				else if (columns == null)
-					columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-				
-				if(override)
-					f.delete();
-				
-				
-				f.createNewFile();
-				Writer w = new OutputStreamWriter(new FileOutputStream(f));
 
-				w.append("package " + packageNameDTO + ";\n\n");
-
-				w.append("import lombok.Getter;\n");
-				w.append("import lombok.Setter;\n");
-
-				w.append("/**\r\n" + " * \r\n" + " * @author José Rene Balderravano Hernández\r\n" + " * @since "
-						+ getDateTime() + " */\n");
-				w.append("@Getter\n");
-				w.append("@Setter\n");
-				w.append("public class " + formatText(tableName, true) + "DTO { \n\n");
 
 				// Add properties
 				for (Column column : columns) {
-					if (column.getIsForeigKey()) {
-						String fkName = "";
-						if (column.getName().startsWith("id"))
-							fkName = column.getName().substring(2);
-						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
-							fkName = column.getName().replace("_id", "").replace("Id", "");
-						String foreignKeyColumn = formatText(fkName, true) + "";
-//						w.append("\t@MapperMapping(srcClass = "+foreignKeyColumn+"Model.class, srcFieldName = \"id"+foreignKeyColumn+"\")\n");
-					}
 
 					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 							+ formatText(column.getName(), false) + ";\n\n");
 				}
 
-				// Add constructor
 
-				w.append("\tpublic " + formatText(tableName, true) + "DTO (){\n");
-				w.append("\t}\n\n");
-
-				w.append("}");
-
-				w.close();
 			}
+			else {
+				List<Column> cols = columns.stream().filter(x -> !x.getIsPrimaryKey()).toList();
+				// Add properties
+				for (Column column : cols) {
+
+					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
+							+ formatText(column.getName(), false) + ";\n\n");
+				}
+				
+			}
+			
+			// Add constructor
+
+			w.append("\tpublic " + formatText(tableName, true) + "DTO (){\n");
+			w.append("\t}\n\n");
+
+			w.append("}");
+
+			w.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
