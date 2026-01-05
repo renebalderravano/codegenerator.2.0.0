@@ -78,6 +78,7 @@ public class DataBaseFrame extends JFrame {
 	private String server;
 	DefaultTreeTableModel model;
 	JXTreeTable treeTable;
+	Boolean existProject= false;
 
 	public DataBaseFrame(String server, String databaseName, JDBCManager jdbcManager, Set<Object[]> tableSelected) {
 		setTitle("Generador de código");
@@ -148,6 +149,7 @@ public class DataBaseFrame extends JFrame {
 				System.out.println(workspace);
 				Path path = Paths.get(workspace);
 				if (Files.exists(path)) {
+					existProject= true;
 					lbl.setText("Proyecto existente.");
 					Path projectDir = Paths.get(workspace);
 					try {
@@ -231,7 +233,8 @@ public class DataBaseFrame extends JFrame {
 					}
 
 				} else {
-
+					existProject= false;
+					lbl.setText("");
 				}
 
 			}
@@ -266,6 +269,14 @@ public class DataBaseFrame extends JFrame {
 		chkAddSecurity.setBounds(23, 169, 212, 23);
 
 		contentPane.add(chkAddSecurity);
+		
+		JCheckBox chkAddTablesSecurity = new JCheckBox("Agregar Tablas Spring Security Oauth");
+		chkAddTablesSecurity.setSelected(false);
+		chkAddTablesSecurity.setBounds(23, 192, 242, 23);
+
+		contentPane.add(chkAddTablesSecurity);
+		
+		
 
 		JComboBox<ComboItem> cbArquitectura = new JComboBox<ComboItem>();
 		cbArquitectura.addItem(new ComboItem("MVC", "mvc"));
@@ -329,13 +340,16 @@ public class DataBaseFrame extends JFrame {
 					}
 				}
 
-				Set<Object[]> tablesSelected = tables.stream().filter(arr -> arr.length > 0 && (arr[2]).equals(true))
-//						.map(arr -> arr[1])
-						.collect(Collectors.toSet());
-//				.findFirst();
+				Set<Object[]> tablesSelected = tables.stream()
+											.filter(arr -> arr.length > 0 && (arr[2]).equals(true))
+					//						.map(arr -> arr[1])
+											.collect(Collectors.toSet());
+					//						.findFirst();
 
-				BackEndGenerator backEndGenerator = new BackEndGenerator(server, databaseName, tables, jdbcManager,
-						workspace, backendName, txtPaquetePrincipal.getText(), arquitectura);
+				BackEndGenerator backEndGenerator = new BackEndGenerator(
+																		 server, databaseName, tables, jdbcManager
+																		 , workspace, backendName, txtPaquetePrincipal.getText(), arquitectura
+																		 , chkAddSecurity.isSelected(), existProject, chkAddTablesSecurity.isSelected());
 
 				String frontendName = txtProjectName.getText() + "Frontend";
 
