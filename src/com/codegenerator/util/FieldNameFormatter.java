@@ -76,6 +76,10 @@ public class FieldNameFormatter {
 	    return input.replaceAll("([a-z])([A-Z])", "$1 $2");
 	}
 	
+	/**
+	 * Convierte el nombre de una tabla en SQL Server en camel case y/o combinado con snake case 
+	 * 
+	 */
 	public static String formatText(String text, boolean capitalize) {
 		String[] data = text.split("_");
 		if (data.length > 1) {

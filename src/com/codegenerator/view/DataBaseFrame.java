@@ -288,8 +288,10 @@ public class DataBaseFrame extends JFrame {
 				String arquitectura = ((ComboItem) cbArquitectura.getSelectedItem()).getValue();
 				if (arquitectura.equals("hexagonal")) {
 					chkAddSecurity.setVisible(false);
+					chkAddTablesSecurity.setVisible(false);
 				} else {
 					chkAddSecurity.setVisible(true);
+					chkAddTablesSecurity.setVisible(true);
 				}
 			}
 		});
@@ -353,9 +355,9 @@ public class DataBaseFrame extends JFrame {
 
 				String frontendName = txtProjectName.getText() + "Frontend";
 
-				FrontEndGenerator2 frontEndGenerator = new FrontEndGenerator2(server, databaseName, tablesSelected,
+				FrontEndGenerator2 frontEndGenerator = new FrontEndGenerator2(server, databaseName, tables,
 						jdbcManager, workspace, frontendName, txtPaquetePrincipal.getText(),
-						chkAddSecurity.isSelected(), arquitectura);
+						chkAddSecurity.isSelected(), arquitectura, existProject);
 
 //				boolean isFrontGenerated = frontEndGenerator.generate();
 //				JOptionPane.showMessageDialog(null, isGenerated ? "Proyecto Generado Exitosamente": "Error al generar el proyecto");

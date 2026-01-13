@@ -239,6 +239,10 @@ public class GeneratorInitializer extends JDialog {
 						setTitle("Procesando " + i + "%...");
 						currentText.setText("Generando backend...");
 						String log = backEndGenerator.getLog();
+						System.out.println("-----------------------------------------------------");
+						System.out.println("log current: "+log);
+						System.out.println("log old: "+oldLog);
+						System.out.println("-----------------------------------------------------");
 						if (!log.equals(oldLog)) {
 							printLog(log);
 							oldLog = log;
