@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,9 +34,11 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 	String architecture = "mvc";
 	boolean addOAuth2;
 	private int processProgress = 0;
+	Boolean existProject = false;
 
 	public FrontEndGenerator2(String server, String databaseName, Set<Object[]> tables, JDBCManager jdbcManager,
-			String workspace, String projectName, String packageName, boolean addOAuth2, String architecture) {
+			String workspace, String projectName, String packageName, boolean addOAuth2, String architecture,
+			Boolean existProject) {
 		this.databaseName = databaseName;
 		this.tables = tables;
 		this.jdbcManager = jdbcManager;
@@ -47,6 +50,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		this.server = server;
 		this.addOAuth2 = addOAuth2;
 		this.architecture = architecture;
+		this.existProject = existProject;
 	}
 
 	@Override
@@ -57,33 +61,65 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		FileManager.createFolder(workspace, projectName);
 		setProcessProgress(30);
 
-		if (!Files.exists(Paths.get(workspace + "\\" + projectName))) {
+		if (!existProject) {
 			FileManager.copyDir((PropertiesReading.folder_codegenerator_util
 					+ (this.architecture.equals("hexagonal") ? "//hexagonal" : "//mvc") + "/FrontEnd/[projectName]"),
 					workspace + "\\" + projectName, true);
 			FileManager.replaceTextInFilesFolder(workspace + "\\" + projectName, "[projectName]", projectName);
 		}
 
-		int availableTime = 50;
-		int i = 30;
-		for (Object[] table : tables) {
-			i += (availableTime / (tables.size()));
-			setProcessProgress(i);
-			String tableName = (String) table[1];
-			printLog("Obteniendo columnas de la tabla " + tableName + "");
+		Set<Object> schemas = tables.stream().filter(arr -> arr.length > 0).map(arr -> arr[0])
+				.collect(Collectors.toSet());
 
-			List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
-			Table tbl = new Table();
-			tbl.setName(tableName);
-			tbl.setColumns(columns);
+		String packageNameComponent = "";
+		String packageNameSevice = "";
 
-			if (((Boolean) table[2])) {
-				printLog("Generando servicio de la tabla " + tableName + "");
-				generateService(tableName);
-				printLog("Generando componente de la tabla " + tableName + "");
-				generateComponent(tbl);
+		for (Object schema : schemas) {
+			String schameName = ((String) schema).toLowerCase();
+			if (schameName.equals("dbo")) {
+				schameName = "";
 			}
+
+			packageNameComponent = this.packagePath + "\\pages\\"
+					+ TextUtil.convertToSnakeCase((String) (schameName.equals("") ? "" : schameName));
+
+			packageNameSevice = this.packagePath + "\\service\\"
+					+ TextUtil.convertToSnakeCase((String) (schameName.equals("") ? "" : schameName));
+
+			FileManager.createPackage(this.packagePath,
+					".pages." + TextUtil.convertToSnakeCase((String) (schameName.equals("") ? "" : schameName)));
+			FileManager.createPackage(this.packagePath,
+					".service." + TextUtil.convertToSnakeCase((String) (schameName.equals("") ? "" : schameName)));
+
+			Set<Object[]> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
+//					.map(arr -> arr[1])
+					.collect(Collectors.toSet());
+			int availableTime = 50;
+			int i = 30;
+			if (!tablesBySchema.isEmpty()) {
+				for (Object[] table : tablesBySchema) {
+					i += (availableTime / (tablesBySchema.size()));
+					setProcessProgress(i);
+					String tableName = (String) table[1];
+					printLog("Obteniendo columnas de la tabla " + tableName + "");
+
+					List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
+					Table tbl = new Table();
+					tbl.setSchema(schameName);
+					tbl.setName(tableName);
+					tbl.setColumns(columns);
+
+					if (((Boolean) table[2])) {
+						printLog("Generando servicio de la tabla " + tableName + "");
+						generateService(packageNameSevice, tableName);
+						printLog("Generando componente de la tabla " + tableName + "");
+						generateComponent(packageNameComponent, tbl);
+					}
+				}
+			}
+
 		}
+
 		setProcessProgress(80);
 		printLog("Aplicando configuración");
 		configurar();
@@ -100,11 +136,10 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 	}
 
 	@Override
-	public Boolean generateService(String tableName) {
+	public Boolean generateService(String packageNameSevice, String tableName) {
 //		FileManager.createFolder(packagePath + "\\service\\", TextUtil.convertToSnakeCase(tableName ));
 
-		String pathService = packagePath + "\\pages\\service\\" + TextUtil.convertToSnakeCase(tableName)
-				+ ".service.ts";
+		String pathService = packageNameSevice + "\\" + TextUtil.convertToSnakeCase(tableName) + ".service.ts";
 
 		try {
 			FileManager.copyDir(
@@ -124,12 +159,11 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 	}
 
 	@Override
-	public Boolean generateComponent(Table table) {
+	public Boolean generateComponent(String packageNameComponent, Table table) {
 
 		String tableName = table.getName();
-		FileManager.createFolder(packagePath + "\\pages\\", TextUtil.convertToSnakeCase(tableName));
-
-		String componentFolder = packagePath + "\\pages\\" + FieldNameFormatter.toSnakeCase(tableName);
+		String componentFolder = packageNameComponent + "\\" + FieldNameFormatter.toSnakeCase(tableName);
+		FileManager.createFolder(packageNameComponent, TextUtil.convertToSnakeCase(tableName));
 
 		/**
 		 * COMPONENT_LIST
@@ -152,6 +186,8 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				FieldNameFormatter.toCamelCase(tableName));
 		FileManager.replaceTextInFile(componentListPath, "SNAKE_CASE[tableName]",
 				FieldNameFormatter.toSnakeCase(tableName));
+		FileManager.replaceTextInFile(componentListPath, "SCHEMA_NAME",
+				FieldNameFormatter.toSnakeCase(table.getSchema()));
 
 		componentListPath = componentFolder + "\\list\\" + TextUtil.convertToSnakeCase(tableName) + ".list.html";
 
@@ -185,11 +221,51 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				FieldNameFormatter.toCamelCase(tableName));
 		FileManager.replaceTextInFile(createComponentPath, "SNAKE_CASE[tableName]",
 				FieldNameFormatter.toSnakeCase(tableName));
+		FileManager.replaceTextInFile(createComponentPath, "SCHEMA_NAME",
+				FieldNameFormatter.toSnakeCase(table.getSchema()));
 
 		StringBuilder builder = new StringBuilder();
-		for (Column col : table.getColumns()) {
 
-			builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+		List<Column> pkColumnsForm = table.getColumns().stream().filter(user -> user.getIsPrimaryKey())
+				.collect(Collectors.toList());
+		List<Column> fkColumnsForm = table.getColumns().stream().filter(user -> user.getIsForeigKey())
+				.collect(Collectors.toList());
+
+		if (pkColumnsForm.size() > 1) {
+			List<Column> columnsAditionalsForm = table.getColumns().stream()
+					.filter(user -> !user.getIsPrimaryKey() && !user.getIsForeigKey()).collect(Collectors.toList());
+
+			if (fkColumnsForm.size() == pkColumnsForm.size()) {
+
+				for (Column col : fkColumnsForm) {
+					builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+				}
+
+				for (Column col : columnsAditionalsForm) {
+					builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+				}
+
+			} else {
+				if (fkColumnsForm.size() < pkColumnsForm.size()) {
+					List<Column> columnsPKNotFKForm = pkColumnsForm.stream().filter(user -> !user.getIsForeigKey())
+							.collect(Collectors.toList());
+					for (Column col : columnsPKNotFKForm) {
+						builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+					}
+
+					for (Column col : fkColumnsForm) {
+						builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+					}
+					for (Column col : columnsAditionalsForm) {
+						builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+					}
+				}
+			}
+
+		} else {
+			for (Column col : table.getColumns()) {
+				builder.append("\t\t\t\t" + col.getName() + ": " + getFormControl(col) + ",\n");
+			}
 		}
 
 		FileManager.replaceTextInFile(createComponentPath, "[formControls]", builder.toString());
@@ -200,31 +276,45 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		StringBuilder executionsService = new StringBuilder("");
 
 		int i = 0;
-		List<Column> x = table.getColumns().stream().filter(user -> user.getIsForeigKey()).collect(Collectors.toList());
+		List<Column> fkColumns = table.getColumns().stream().filter(user -> user.getIsForeigKey())
+				.collect(Collectors.toList());
 
-		if (tableName.equals("Usuario"))
+		if (tableName.equals("Issuer"))
 			System.out.println();
 
-		if (!x.isEmpty()) {
-			for (Column col : x) {
+		if (!fkColumns.isEmpty()) {
+			String foreignKeyColumn = "";
+			String foreignKeyColumnOld = "";
+			for (Column col : fkColumns) {
 				String fkName = "";
 				if (col.getName().startsWith("id"))
 					fkName = col.getName().substring(2);
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
 
-				String foreignKeyColumn = FieldNameFormatter.formatText(fkName, false);
-				importsService.append("import { " + FieldNameFormatter.toPascalCase(foreignKeyColumn)
-						+ "Service } from '../../service/" + FieldNameFormatter.toSnakeCase(foreignKeyColumn)
-						+ ".service';\n");
+				Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(col.getTableReference()))
+						.findFirst();
+				String schemaFK = fk.get()[0].toString().toLowerCase();
+
+				foreignKeyColumn = FieldNameFormatter.formatText(col.getTableReference(), false);
+
+				if (!foreignKeyColumnOld.equals(foreignKeyColumn) && !FieldNameFormatter.formatText(tableName, false).equals(foreignKeyColumn) ) {
+					importsService.append("import { " + FieldNameFormatter.toPascalCase(col.getTableReference()) + "Service }" 
+							+ " from '../../../../service/"
+							+ TextUtil.convertToSnakeCase((String) (schemaFK.equals("") ? "" : schemaFK)) + "/"
+							+ FieldNameFormatter.toSnakeCase(col.getTableReference()) + ".service';\n");
+
+					foreignKeyColumnOld = foreignKeyColumn;
+				}
+
 				declarationsOption
-						.append("\topts" + FieldNameFormatter.toPascalCase(fkName) + ": any[] | undefined; \n");
-				declarationsService.append("private " + foreignKeyColumn + "Service: "
-						+ FieldNameFormatter.toPascalCase(foreignKeyColumn) + "Service,\n");
-				executionsService
-						.append("	this." + foreignKeyColumn + "Service.findAll().subscribe((data: any) => {\r\n"
-								+ "			this.opts" + FieldNameFormatter.toPascalCase(foreignKeyColumn)
-								+ " = data\r\n" + "	},\r\n" + "		(error: any) => {\r\n" + "		});\n");
+						.append("\topts" + FieldNameFormatter.toPascalCase(fkName) + " : any[] | undefined; \n");
+				declarationsService.append("private " + FieldNameFormatter.toCamelCase(fkName) + "Service: "
+						+ FieldNameFormatter.toPascalCase(col.getTableReference()) + "Service,\n");
+				executionsService.append("	this." + FieldNameFormatter.toCamelCase(fkName)
+						+ "Service.findAll().subscribe((data: any) => {\r\n" + "			this.opts"
+						+ FieldNameFormatter.toPascalCase(fkName) + " = data\r\n" + "	},\r\n"
+						+ "		(error: any) => {\r\n" + "		});\n");
 				i++;
 			}
 		}
@@ -340,11 +430,11 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 		StringBuilder query = new StringBuilder();
 		String option = "";
+		String routes = "";
 		int id = 1;
 		int i = 1;
 		for (Object schema : schemas) {
 			String schameName = ((String) schema).toLowerCase();
-
 			if (schameName.equals("dbo")) {
 				schameName = "";
 				continue;
@@ -382,6 +472,10 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 					option += "\t\t\t\t\t{ label: '" + FieldNameFormatter.splitCamelCaseToString(object.toString())
 							+ "', icon: 'pi pi-fw pi-user', routerLink: ['/"
 							+ FieldNameFormatter.toSnakeCase(object.toString()) + "'] },\n";
+
+					routes += "\t\t\t{ path: '" + TextUtil.convertToSnakeCase(object.toString())
+							+ "', loadChildren: () => import('./app/pages/" + schameName + "/"
+							+ TextUtil.convertToSnakeCase(object.toString()) + "/" + "routes') },\n";
 
 					query.append(
 							"INSERT INTO [Security].[Access]([id],[name] ,[description] ,[icon] ,[url] ,[parentAccessId] ,[menuOrder] ,[nameEN] ,[nameFR] ,[enabled] ,[createdBy] ,[createdDate])");
@@ -423,16 +517,7 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 		String navClass = packagePath + "\\layout\\component\\" + "app.menu.ts";
 		FileManager.replaceTextInFile(navClass, "//ArrayOptions", option);
 
-		String routes = "";
-		for (Object[] table : tables) {
-			String tableName = (String) table[1];
-			routes += "\t\t\t{ path: '" + TextUtil.convertToSnakeCase(tableName)
-					+ "', loadChildren: () => import('./app/pages/" + TextUtil.convertToSnakeCase(tableName) + "/"
-					+ "routes') },\n";
-		}
-
 		String routesClass = packagePath.replace("\\app", "") + "\\" + "app.routes.ts";
-
 		FileManager.replaceTextInFile(routesClass, "//ArrayRoutes", routes);
 
 		return true;
@@ -476,6 +561,18 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 	@Override
 	public Boolean generateComponent(String tableName, List<Column> columns) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Boolean generateService(String tableName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Boolean generateComponent(Table table) {
 		// TODO Auto-generated method stub
 		return null;
 	}

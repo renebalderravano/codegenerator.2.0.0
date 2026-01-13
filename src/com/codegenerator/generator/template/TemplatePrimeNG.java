@@ -1,5 +1,6 @@
 package com.codegenerator.generator.template;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,12 +26,47 @@ public class TemplatePrimeNG {
 
 	public static String createForm(Table table) {
 
-		Map<String, String> columnas = new LinkedHashMap();
-		
-		for (Column column : table.getColumns()) {
-			columnas.put(column.getName(), column.getDataType());
+		List<Column> columnas = new ArrayList<Column>();
+		List<Column> pkColumnsForm = table.getColumns().stream().filter(user -> user.getIsPrimaryKey())
+				.collect(Collectors.toList());
+		List<Column> fkColumnsForm = table.getColumns().stream().filter(user -> user.getIsForeigKey())
+				.collect(Collectors.toList());
+
+		if (pkColumnsForm.size() > 1) {
+			List<Column> columnsAditionalsForm = table.getColumns().stream()
+					.filter(user -> !user.getIsPrimaryKey() && !user.getIsForeigKey()).collect(Collectors.toList());
+
+			if (fkColumnsForm.size() == pkColumnsForm.size()) {
+				for (Column col : fkColumnsForm) {
+					columnas.add(col);
+				}
+				for (Column col : columnsAditionalsForm) {
+					columnas.add(col);
+				}
+			} else {
+				if (fkColumnsForm.size() < pkColumnsForm.size()) {
+					List<Column> columnsPKNotFKForm = pkColumnsForm.stream().filter(user -> !user.getIsForeigKey())
+							.collect(Collectors.toList());
+
+					for (Column col : columnsPKNotFKForm) {
+						columnas.add(col);
+					}
+					for (Column col : fkColumnsForm) {
+						columnas.add(col);
+					}
+					for (Column col : columnsAditionalsForm) {
+						columnas.add(col);
+					}
+				}
+			}
+
+		} else {
+			for (Column col : table.getColumns()) {
+				columnas.add(col);
+			}
 		}
-		String formulario = generatePrimeNgForm(table.getName(), table.getColumns());
+
+		String formulario = generatePrimeNgForm(table.getName(), columnas);
 		System.out.println(formulario);
 
 		return formulario;
@@ -43,12 +79,11 @@ public class TemplatePrimeNG {
 	private static String generatePrimeNgForm(String tableName, List<Column> columns) {
 		StringBuilder formBuilder = new StringBuilder();
 		formBuilder.append("<div class=\"card\">\n");
-		formBuilder.append( "	<h3>" + FieldNameFormatter.splitCamelCaseToString(tableName) + "</h3>\n");
-		formBuilder.append( "   <hr><p-toast />\n");
-		formBuilder.append( "   <div class=\"flex flex-col gap-4\">\r\n");
+		formBuilder.append("	<h3>" + FieldNameFormatter.splitCamelCaseToString(tableName) + "</h3>\n");
+		formBuilder.append("   <hr><p-toast />\n");
+		formBuilder.append("   <div class=\"flex flex-col gap-4\">\r\n");
 		formBuilder.append("		<form [formGroup]=\"form\">\n");
 
-		
 		int i = 1;
 		int count = columns.size();
 		for (Column col : columns) {
@@ -59,11 +94,11 @@ public class TemplatePrimeNG {
 
 			if (col.getIsForeigKey()) {
 				String fkName = "";
-				if (col.getName().startsWith("id")  || col.getName().startsWith("Id"))
+				if (col.getName().startsWith("id") || col.getName().startsWith("Id"))
 					fkName = col.getName().substring(2);
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
-				
+
 //				String foreignKeyColumn = FieldNameFormatter.formatText(fkName, false);
 				column = col.getName();
 				type = "select";
@@ -103,8 +138,7 @@ public class TemplatePrimeNG {
 				+ "            <div class=\"flex flex-col grow basis-0 gap-4 flex-end\"></div>\r\n"
 				+ "                <div class=\"flex-end\">\r\n"
 				+ "                    <p-button icon='pi pi-eraser' label=\"Clear\" severity=\"warn\" "
-				+ "						(onClick)=\"clear()\"\r\n"
-				+ "                         />&nbsp;&nbsp;&nbsp;\r\n"
+				+ "						(onClick)=\"clear()\"\r\n" + "                         />&nbsp;&nbsp;&nbsp;\r\n"
 				+ "                    <p-button icon='pi pi-fw pi-save' label=\"Save\" severity=\"info\" (onClick)=\"save()\"\r\n"
 				+ "                         />\r\n" + "                </div>\r\n" + "        </div>\n");
 		formBuilder.append("	</form>\n");
@@ -122,14 +156,14 @@ public class TemplatePrimeNG {
 
 		if (column.getIsForeigKey()) {
 			String fkName = "";
-			if (column.getName().startsWith("id")  || column.getName().startsWith("Id"))
+			if (column.getName().startsWith("id") || column.getName().startsWith("Id"))
 				fkName = column.getName().substring(2);
 			else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 				fkName = column.getName().replace("_id", "").replace("Id", "");
-			
-			return "<p-select [options]=\"opts" + FieldNameFormatter.toPascalCase(fkName)+ "\" formControlName=\""
+
+			return "<p-select [options]=\"opts" + FieldNameFormatter.toPascalCase(fkName) + "\" formControlName=\""
 					+ fieldName + "\" optionValue=\"id\" optionLabel=\"name\"  placeholder=\"Seleccione " + fieldName
-					+ "\" class=\"w-full md:w-56\" "+validator+" />";
+					+ "\" class=\"w-full md:w-56\" " + validator + " />";
 		}
 
 		switch (column.getDataType()) {
@@ -171,11 +205,8 @@ public class TemplatePrimeNG {
 		case "binary":
 		case "varbinary":
 		case "image":
-			return "<p-fileUpload "
-					+ "name=\"archivo\"\r\n"
-					+ "				[customUpload]=\"true\"\r\n"
-					+ "				(uploadHandler)=\"uploadFile($event)\"\r\n"
-					+ "				accept=\".xlsx\"\r\n"
+			return "<p-fileUpload " + "name=\"archivo\"\r\n" + "				[customUpload]=\"true\"\r\n"
+					+ "				(uploadHandler)=\"uploadFile($event)\"\r\n" + "				accept=\".xlsx\"\r\n"
 					+ "				maxFileSize=\"1000000\"\r\n"
 					+ "				chooseLabel=\"Seleccionar archivo\"\r\n"
 					+ "				uploadLabel=\"Subir\"\r\n"
@@ -199,12 +230,13 @@ public class TemplatePrimeNG {
 
 	private static String generateTable(List<Column> columns, String tableVarName) {
 		
+		if (tableVarName.equals("UserProfile"))
+			System.out.println();
+
 		String[] filters = columns.stream().map(Column::getName).toArray(String[]::new);
-		
-		String filterLst = Arrays.stream(filters)
-			    .map(filter -> "'" + filter + "'")
-			    .collect(Collectors.joining(", "));		
-		
+
+		String filterLst = Arrays.stream(filters).map(filter -> "'" + filter + "'").collect(Collectors.joining(", "));
+
 		StringBuilder html = new StringBuilder();
 		html.append("<div class=\"card\">\n");
 		html.append("  <p-table\n");
@@ -215,21 +247,23 @@ public class TemplatePrimeNG {
 		html.append("    [rowsPerPageOptions]=\"[5, 10, 20]\"\n");
 		html.append("    [loading]=\"loading\"\n");
 		html.append("    [rowHover]=\"true\"\n");
-		html.append("    [globalFilterFields]=\"["+filterLst+"]\"\n");
+		html.append("    [globalFilterFields]=\"[" + filterLst + "]\"\n");
 		html.append("    [showGridlines]=\"true\"\n");
 		html.append("    [paginator]=\"true\"\n");
 		html.append("    responsiveLayout=\"scroll\"\n");
 		html.append("    stripedRows\n");
 		html.append("  >\n");
-		
+
 		html.append("<ng-template #caption>\n");
 		html.append("	<div class=\"flex justify-between items-center flex-column sm:flex-row\">\n");
-		html.append("	<button pButton label=\"Clear\" class=\"p-button-outlined mb-2\" icon=\"pi pi-filter-slash\" (click)=\"clear(dt1)\"></button>\n");
+		html.append(
+				"	<button pButton label=\"Clear\" class=\"p-button-outlined mb-2\" icon=\"pi pi-filter-slash\" (click)=\"clear(dt1)\"></button>\n");
 		html.append("    	<p-iconfield iconPosition=\"left\" class=\"ml-auto\"> \n");
 		html.append("        	<p-inputicon> \n");
 		html.append("           <i class=\"pi pi-search\"></i> \n");
 		html.append("        	</p-inputicon> \n");
-		html.append("        	<input pInputText type=\"text\" (input)=\"onGlobalFilter(dt1, $event)\" placeholder=\"Search keyword\" /> \n");
+		html.append(
+				"        	<input pInputText type=\"text\" (input)=\"onGlobalFilter(dt1, $event)\" placeholder=\"Search keyword\" /> \n");
 		html.append("    	</p-iconfield> \n");
 		html.append("	 &nbsp;&nbsp;&nbsp;<p-button (click)=\"showDialog()\" label=\"Upload\" />\r\n"
 				+ "          &nbsp;&nbsp;&nbsp; <p-button (click)=\"download()\" label=\"Download\" />\n");
@@ -242,7 +276,20 @@ public class TemplatePrimeNG {
 		for (Column col : columns) {
 			html.append("        <th style=\"min-width: 12rem\">\n");
 			html.append("          <div class=\"flex justify-between items-center\">\n");
-			html.append("            " + toLabel(col.getName()) + "\n");
+
+			if (col.getIsForeigKey()) {
+				String fkName = "";
+				if (col.getName().startsWith("id") || col.getName().startsWith("Id"))
+					fkName = col.getName().substring(2);
+				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
+					fkName = col.getName().replace("_id", "").replace("Id", "");
+
+				html.append("            " + toLabel(FieldNameFormatter.splitCamelCaseToString(fkName)) + "\n");
+
+			} else {
+				html.append("            " + toLabel(col.getName()) + "\n");
+			}
+
 			html.append("            " + generateColumnFilter(col) + "\n");
 			html.append("          </div>\n");
 			html.append("        </th>\n");
@@ -255,7 +302,19 @@ public class TemplatePrimeNG {
 		html.append("      <tr  (dblclick)=\"update(row)\">\n");
 		for (Column col : columns) {
 			html.append("        <td>\n");
-			html.append("          " + generateBodyCell(col, "row") + "\n");
+			if (col.getIsForeigKey()) {
+				String fkName = "";
+				if (col.getName().startsWith("id") || col.getName().startsWith("Id"))
+					fkName = col.getName().substring(2);
+				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
+					fkName = col.getName().replace("_id", "").replace("Id", "");
+
+				html.append("          "
+						+ generateBodyCell("name", "varchar", "row." + FieldNameFormatter.formatText(fkName, false)+"Name") + "\n");
+			} else
+
+				html.append("          " + generateBodyCell(col.getName(), col.getDataType(), "row") + "\n");
+
 			html.append("        </td>\n");
 		}
 		html.append("      </tr>\n");
@@ -297,9 +356,10 @@ public class TemplatePrimeNG {
 		}
 	}
 
-	private static String generateBodyCell(Column col, String rowVar) {
-		String field = rowVar + "." + col.getName();
-		switch (col.getDataType().toLowerCase()) {
+	private static String generateBodyCell(String colName, String colDataType, String rowVar) {
+
+		String field = rowVar + "." + colName;
+		switch (colDataType.toLowerCase()) {
 		case "bit":
 			return "<p-tag [value]=\"" + field + " ? 'Yes' : 'No'\" />";
 		case "date":

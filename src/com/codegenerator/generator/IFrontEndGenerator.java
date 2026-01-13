@@ -12,5 +12,7 @@ public interface IFrontEndGenerator {
 	public Boolean generateService(String tableName);
 	public Boolean generateComponent(String tableName, List<Column> columns);
 	public Boolean generateComponent(Table table);
+	Boolean generateService(String schemaName, String tableName);
+	Boolean generateComponent(String packageNameComponent, Table table);
 	
 }

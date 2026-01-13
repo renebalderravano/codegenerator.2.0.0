@@ -103,16 +103,12 @@ public class BackEndGenerator {
 
 			FileManager.createRootDirectory(workspace, projectName);
 			FileManager.createPackage(this.packagePath, this.packageName);
-
+			setProcessProgress(20);
 			Set<Object> schemas = tables.stream().filter(arr -> arr.length > 0).map(arr -> arr[0])
 					.collect(Collectors.toSet());
 
-			setProcessProgress(30);
-
-			float timeProm = schemas.size() / 20;
-			float progress = 30;
 			for (Object schema : schemas) {
-				progress += timeProm;
+
 				String schameName = ((String) schema).toLowerCase();
 				if (schameName.equals("dbo")) {
 					schameName = "";
@@ -120,8 +116,7 @@ public class BackEndGenerator {
 
 				if (this.architecture.equals("mvc")) {
 					packageNameEntity = this.packageName + ".model" + (schameName.equals("") ? "" : "." + schameName);
-					packageNameDAO = this.packageName + ".repository"
-							+ (schameName.equals("") ? "" : "." + schameName);
+					packageNameDAO = this.packageName + ".repository" + (schameName.equals("") ? "" : "." + schameName);
 					packageNameDAOImpl = this.packageName + ".repository.impl"
 							+ (schameName.equals("") ? "" : "." + schameName);
 					packageNameSevice = this.packageName + ".service" + (schameName.equals("") ? "" : "." + schameName);
@@ -175,13 +170,14 @@ public class BackEndGenerator {
 				Set<Object[]> tablesBySchema = tables.stream().filter(arr -> arr.length > 0 && (arr[0]).equals(schema))
 //						.map(arr -> arr[1])
 						.collect(Collectors.toSet());
-
+				int availableTime = 50;
+				int i = 30;
 				if (!tablesBySchema.isEmpty()) {
 					for (Object[] table : tablesBySchema) {
-
-						setProcessProgress((int) progress);
+						i += (availableTime / (tablesBySchema.size()));
+						setProcessProgress(i);
 						String tableName = (String) table[1];
-						printLog("Obteniendo columnas de la tabla " + tableName + "");
+						printLog("Obteniendo columnas de la tabla " + (table[1] + ""));
 						List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
 
 						List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
@@ -191,30 +187,30 @@ public class BackEndGenerator {
 						tbl.setName(tableName);
 						tbl.setColumns(columns);
 
-						printLog("Generando modelo de la tabla " + (tableName + ""));
+						printLog("Generando modelo de la tabla " + (table[1] + ""));
 						generateEntity(packageNameEntity, tbl, ((boolean) table[2]));
 
 						if (!this.architecture.equals("mvc")) {
+							printLog("Generando controlador de la tabla " + (table[1] + ""));
 							generateModel(packageNameModel, tbl, ((boolean) table[2]));
 							generateDTO(packageNameDTO, tbl, ((boolean) table[2]));
 						}
 
-						printLog("Generando repositorio de la tabla " + tableName + "");
+						printLog("Generando repositorio de la tabla " + (table[1] + ""));
 						generateDAO(packageNameEntity, packageNameDAO, tbl);
-						generateDAOImpl(packageNameEntity, packageNameDAO, packageNameDAOImpl,
-								tbl);
-						printLog("Generando servicio de la tabla " + tableName + "");
+						generateDAOImpl(packageNameEntity, packageNameDAO, packageNameDAOImpl, tbl);
+						printLog("Generando servicio de la tabla " + (table[1] + ""));
 						generateService(packageNameEntity, packageNameSevice, tbl);
 						generateServiceImpl(packageNameEntity, packageNameSevice, packageNameServiceImpl, tbl);
 
-						printLog("Generando controlador de la tabla " + tableName + "");
+						printLog("Generando controlador de la tabla " + (table[1] + ""));
 						generateController(packageNameDTO, packageNameController, tbl);
 //						}
 					}
 				}
 			}
 
-			setProcessProgress(50);
+			setProcessProgress(70);
 
 			if (!existProject) {
 				printLog("Preparando carpeta util...");
@@ -240,7 +236,7 @@ public class BackEndGenerator {
 				FileManager.replaceTextInFile(
 						packagePath + "\\" + packageName.replace(".", "\\") + "\\Application.java", "[packageName]",
 						packageName);
-				setProcessProgress(60);
+				setProcessProgress(75);
 				printLog("Preparando configuración hibernate...");
 
 				// preparar configuracion Hibernate
@@ -264,7 +260,7 @@ public class BackEndGenerator {
 						packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", "[packageName]",
 						packageName);
 
-				setProcessProgress(70);
+				setProcessProgress(80);
 				if (this.addOAuth2) {
 
 					printLog("Agregando Spring Security Oauth2...");
@@ -275,10 +271,9 @@ public class BackEndGenerator {
 							packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", false);
 
 					FileManager.replaceTextInFilesFolder(
-							packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", 
-							"[packageName]",
+							packagePath + "\\" + packageName.replace(".", "\\") + "\\configuration", "[packageName]",
 							packageName);
-					
+
 					if (this.addTablesOAuth) {
 						printLog("\tCreando tablas requeridas por Spring Security Oauth2...");
 						addTablesSpringSecurity(databaseName);
@@ -292,7 +287,7 @@ public class BackEndGenerator {
 							packagePath + "\\" + packageName.replace(".", "\\") + "\\model", "[packageName]",
 							packageName);
 
-					setProcessProgress(75);
+					setProcessProgress(85);
 					printLog("\tCreando repository user para Spring Security Oauth2...");
 					FileManager.copyDir(
 							PropertiesReading.folder_codegenerator_util
@@ -334,7 +329,7 @@ public class BackEndGenerator {
 							workspace + "\\" + projectName + "\\pom.xml", false);
 				}
 
-				setProcessProgress(80);
+				setProcessProgress(90);
 				printLog("Preparando archivo pom.xml...");
 
 				// preparar archivo pom.xml
@@ -350,7 +345,7 @@ public class BackEndGenerator {
 				FileManager.replaceTextInFile(workspace + "\\" + projectName + "\\pom.xml", "[DBversion]",
 						PropertiesReading.getProperty(jdbcManager.getServer() + ".version"));
 
-				setProcessProgress(90);
+				setProcessProgress(91);
 				printLog("Preparando archivo application.properties...");
 				// preparar archivo application.properties
 				FileManager.copyDir(PropertiesReading.folder_codegenerator_util
@@ -378,6 +373,7 @@ public class BackEndGenerator {
 				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[dialect]",
 						PropertiesReading.getProperty(jdbcManager.getServer() + ".dialect"));
 
+				setProcessProgress(92);
 				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[packageName]", packageName);
 
 				if (this.architecture.equals("hexagonal")) {
@@ -391,6 +387,7 @@ public class BackEndGenerator {
 									+ "/auth/AuthController.java",
 							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
 							false);
+					setProcessProgress(93);
 
 					FileManager.replaceTextInFile(
 							packagePath + "\\" + packageNameController.replace(".", "\\") + "\\AuthController.java",
@@ -406,6 +403,7 @@ public class BackEndGenerator {
 							packagePath + "\\" + packageNameSevice.replace(".", "\\") + "\\AuthService.java",
 							"[packageName]", packageName);
 
+					setProcessProgress(94);
 					FileManager.copyDir(
 							PropertiesReading.folder_codegenerator_util
 									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
@@ -417,6 +415,7 @@ public class BackEndGenerator {
 							packagePath + "\\" + packageNameServiceImpl.replace(".", "\\") + "\\AuthServiceImpl.java",
 							"[packageName]", packageName);
 
+					setProcessProgress(95);
 					FileManager.copyDir(
 							PropertiesReading.folder_codegenerator_util
 									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
@@ -427,6 +426,7 @@ public class BackEndGenerator {
 							packagePath + "\\" + packageNameDTO.replace(".", "\\") + "\\AuthDTO.java", "[packageName]",
 							packageName);
 
+					setProcessProgress(96);
 					FileManager.copyDir(
 							PropertiesReading.folder_codegenerator_util
 									+ (this.architecture.equals("hexagonal") ? "//hexagonal//backend" : "")
@@ -440,6 +440,8 @@ public class BackEndGenerator {
 				}
 
 			}
+
+			setProcessProgress(99);
 
 		} catch (Exception e) {
 			setProcessProgress(100);
@@ -847,7 +849,7 @@ public class BackEndGenerator {
 					w.append("@Table(name = \"" + tableName + "\")\n");
 
 				w.append("public class " + formatText(tableName, true) + "Entity{\n\n");
-
+				w.append("\t@EmbeddedId\n");
 				w.append("\tprivate " + formatText(tableName, true) + "Id " + "id;\n\n");
 
 				List<Column> col = table.getColumns().stream().filter(x -> !x.getIsPrimaryKey()).toList();
@@ -1012,7 +1014,12 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
-						String foreignKeyColumn = formatText(fkName, true) + "";
+						String foreignKeyColumn = formatText(fkName, false) + "";
+
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
+								+ "Entity.class, srcFieldName = \"" + formatText(fkName, false) + ".name\")\n");
+						w.append("\tprivate String " + foreignKeyColumn + "Name;\n\n");
+
 						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
 								+ "Entity.class, srcFieldName = \"" + formatText(fkName, false) + ".id\")\n");
 					}
@@ -1036,6 +1043,10 @@ public class BackEndGenerator {
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
 						String foreignKeyColumn = formatText(fkName, true) + "";
+						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
+								+ "Entity.class, srcFieldName = \"" + formatText(fkName, false) + ".name\")\n");
+						w.append("\tprivate String " + formatText(fkName, false)  + "Name;\n\n");
+
 						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
 								+ "Entity.class,  srcFieldName = \"" + formatText(fkName, false) + ".id\")\n");
 					}
@@ -1101,6 +1112,17 @@ public class BackEndGenerator {
 
 				// Add properties
 				for (Column column : columns) {
+
+					if (column.getIsForeigKey()) {
+						String fkName = "";
+						if (column.getName().startsWith("id"))
+							fkName = column.getName().substring(2);
+						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
+							fkName = column.getName().replace("_id", "").replace("Id", "");
+
+						String foreignKeyColumn = formatText(fkName, true) + "";
+						w.append("\tprivate String " + formatText(fkName, false)  + "Name;\n\n");
+					}
 
 					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 							+ formatText(column.getName(), false) + ";\n\n");
@@ -1177,8 +1199,8 @@ public class BackEndGenerator {
 		return true;
 	}
 
-	private boolean generateDAOImpl(String packageNameEntity, String packageNameDAO,
-			String packageNameDAOImpl, Table table) {
+	private boolean generateDAOImpl(String packageNameEntity, String packageNameDAO, String packageNameDAOImpl,
+			Table table) {
 		try {
 			String tableName = table.getName();
 			String pathModel = packagePath + "\\" + packageNameDAOImpl.replace(".", "\\") + "\\"
@@ -1217,8 +1239,7 @@ public class BackEndGenerator {
 					+ "\n */\n");
 			w.append("@Repository\n");
 			w.append("public class " + formatText(tableName, true) + "DAOImpl extends BaseDAO<"
-					+ formatText(tableName, true) + "Entity> implements " + formatText(tableName, true)
-					+ "DAO { \n\n");
+					+ formatText(tableName, true) + "Entity> implements " + formatText(tableName, true) + "DAO { \n\n");
 
 			if (tableName.equalsIgnoreCase("Usuario") || tableName.equalsIgnoreCase("User"))
 				w.append("	@Override\r\n" + "	public " + tableName + "Entity findByUserName(String userName) {\r\n"

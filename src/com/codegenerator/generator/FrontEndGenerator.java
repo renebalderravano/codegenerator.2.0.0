@@ -305,5 +305,17 @@ public class FrontEndGenerator implements IFrontEndGenerator {
 		return null;
 	}
 
+	@Override
+	public Boolean generateService(String schemaName, String tableName) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Boolean generateComponent(String packageNameComponent, Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 
 }

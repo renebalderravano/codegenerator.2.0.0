@@ -12,6 +12,7 @@ public class Column {
 	private boolean isForeigKey;
 	private boolean isUnique;
 	private boolean autoIncrement;
+	private Integer ordinalPosition;
 	private String tableReference;
 
 	public Column() {
@@ -97,6 +98,14 @@ public class Column {
 
 	public void setAutoIncrement(boolean autoIncrement) {
 		this.autoIncrement = autoIncrement;
+	}
+
+	public Integer getOrdinalPosition() {
+		return ordinalPosition;
+	}
+
+	public void setOrdinalPosition(Integer ordinalPosition) {
+		this.ordinalPosition = ordinalPosition;
 	}
 
 	public String getTableReference() {
