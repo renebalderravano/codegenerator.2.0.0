@@ -292,6 +292,9 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
 
+				if(fkName.equals(""))							
+					fkName = col.getName();
+				
 				Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(col.getTableReference()))
 						.findFirst();
 				String schemaFK = fk.get()[0].toString().toLowerCase();

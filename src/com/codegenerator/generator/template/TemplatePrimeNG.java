@@ -99,6 +99,8 @@ public class TemplatePrimeNG {
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
 
+				if(fkName.equals(""))							
+					fkName = col.getName();
 //				String foreignKeyColumn = FieldNameFormatter.formatText(fkName, false);
 				column = col.getName();
 				type = "select";
@@ -161,6 +163,9 @@ public class TemplatePrimeNG {
 			else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 				fkName = column.getName().replace("_id", "").replace("Id", "");
 
+			if(fkName.equals(""))							
+				fkName = column.getName();
+			
 			return "<p-select [options]=\"opts" + FieldNameFormatter.toPascalCase(fkName) + "\" formControlName=\""
 					+ fieldName + "\" optionValue=\"id\" optionLabel=\"name\"  placeholder=\"Seleccione " + fieldName
 					+ "\" class=\"w-full md:w-56\" " + validator + " />";
@@ -284,6 +289,8 @@ public class TemplatePrimeNG {
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
 
+				if(fkName.equals(""))							
+					fkName = col.getName();
 				html.append("            " + toLabel(FieldNameFormatter.splitCamelCaseToString(fkName)) + "\n");
 
 			} else {
@@ -308,6 +315,9 @@ public class TemplatePrimeNG {
 					fkName = col.getName().substring(2);
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
+				
+				if(fkName.equals(""))							
+					fkName = col.getName();
 
 				html.append("          "
 						+ generateBodyCell("name", "varchar", "row." + FieldNameFormatter.formatText(fkName, false)+"Name") + "\n");

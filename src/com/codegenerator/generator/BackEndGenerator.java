@@ -599,7 +599,10 @@ public class BackEndGenerator {
 							fkName = column.getName().substring(2);
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
-
+						
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, true);
 						w.append("\t@ManyToOne\n");
 						w.append("\t@JoinColumn(name = \"" + column.getName() + "\")\n");
@@ -636,6 +639,9 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, true);
 						w.append("\tpublic " + formatText(column.getTableReference(), true) + "Entity" + " get"
 								+ foreignKeyColumn + "(){\n");
@@ -883,6 +889,9 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, true);
 						w.append("\t@ManyToOne\n");
 						w.append("\t@MapsId(\"" + column.getName() + "\")\n");
@@ -929,6 +938,9 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, true);
 						w.append("\tpublic " + formatText(column.getTableReference(), true) + "Entity" + " get"
 								+ foreignKeyColumn + "(){\n");
@@ -1014,6 +1026,9 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, false) + "";
 
 						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
@@ -1042,6 +1057,9 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, true) + "";
 						w.append("\t@MapperMapping(srcClass = " + formatText(tableName, true)
 								+ "Entity.class, srcFieldName = \"" + formatText(fkName, false) + ".name\")\n");
@@ -1120,6 +1138,9 @@ public class BackEndGenerator {
 						else if (column.getName().endsWith("_id") || column.getName().endsWith("Id"))
 							fkName = column.getName().replace("_id", "").replace("Id", "");
 
+						if(fkName.equals(""))							
+							fkName = column.getName();
+						
 						String foreignKeyColumn = formatText(fkName, true) + "";
 						w.append("\tprivate String " + formatText(fkName, false)  + "Name;\n\n");
 					}
