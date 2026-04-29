@@ -240,6 +240,7 @@ public class GeneratorInitializer extends JDialog {
 						currentText.setText("Generando backend...");
 						String log = backEndGenerator.getLog();
 						System.out.println("-----------------------------------------------------");
+						System.out.println("Porcentaje"+i);
 						System.out.println("log current: "+log);
 						System.out.println("log old: "+oldLog);
 						System.out.println("-----------------------------------------------------");

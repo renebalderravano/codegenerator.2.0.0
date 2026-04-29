@@ -177,10 +177,15 @@ public class BackEndGenerator {
 						i += (availableTime / (tablesBySchema.size()));
 						setProcessProgress(i);
 						String tableName = (String) table[1];
+						
+						if (tableName.equals("ClientFundConfig"))
+							System.out.println(); 
+						
+						
 						printLog("Obteniendo columnas de la tabla " + (table[1] + ""));
 						List<Column> columns = jdbcManager.getColumnsByTable(databaseName, tableName);
 
-						List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
+						List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).collect(Collectors.toList());
 //						if (col.size() == 1) {
 						Table tbl = new Table();
 						tbl.setSchema(schameName);
@@ -375,8 +380,9 @@ public class BackEndGenerator {
 
 				setProcessProgress(92);
 				FileManager.replaceTextInFile(resourcesPath + "\\application.properties", "[packageName]", packageName);
-
+				printLog("application.properties configurado.");
 				if (this.architecture.equals("hexagonal")) {
+					printLog("Configurando Autenticación...");
 					packageNameController = this.packageName + ".infrastructure.adapters.input.rest.security";
 					packageNameDTO = this.packageName + ".infrastructure.adapters.input.dto.security";
 					packageNameSevice = this.packageName + ".application.ports.input.security";
@@ -437,6 +443,8 @@ public class BackEndGenerator {
 
 					FileManager.replaceTextInFile(packagePath + "\\" + packageNameServiceImpl.replace(".", "\\")
 							+ "\\UserDetailsServiceImpl.java", "[packageName]", packageName);
+					
+					printLog("Autenticación configurada.");
 				}
 
 			}
@@ -448,7 +456,7 @@ public class BackEndGenerator {
 			e.printStackTrace();
 			return false;
 		}
-
+		printLog("Proceso finalizado!!!");
 		setProcessProgress(100);
 
 		return true;
@@ -493,7 +501,7 @@ public class BackEndGenerator {
 			String tableSchema = table.getSchema();
 			String tableName = table.getName();
 			List<Column> columns = table.getColumns();
-			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
+			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).collect(Collectors.toList());
 
 			if (col.size() == 1) {
 
@@ -707,7 +715,7 @@ public class BackEndGenerator {
 				w.append("@Embeddable\n");
 				w.append("public class " + formatText(tableName, true) + "Id implements Serializable {\n\n");
 				w.append("\tprivate static final long serialVersionUID = 1L;\n");
-				List<Column> col = table.getColumns().stream().filter(x -> x.getIsPrimaryKey()).toList();
+				List<Column> col = table.getColumns().stream().filter(x -> x.getIsPrimaryKey()).collect(Collectors.toList());
 				for (Column column : col) {
 					w.append("\tprivate " + getDataTypeJava(this.server, column.getDataType()) + " "
 							+ formatText(column.getName(), false) + ";\n\n");
@@ -858,7 +866,7 @@ public class BackEndGenerator {
 				w.append("\t@EmbeddedId\n");
 				w.append("\tprivate " + formatText(tableName, true) + "Id " + "id;\n\n");
 
-				List<Column> col = table.getColumns().stream().filter(x -> !x.getIsPrimaryKey()).toList();
+				List<Column> col = table.getColumns().stream().filter(x -> !x.getIsPrimaryKey()).collect(Collectors.toList());
 				for (Column column : col) {
 					if (!column.getIsForeigKey()) {
 						if (column.getDataType().equals("varbinary"))
@@ -1013,7 +1021,7 @@ public class BackEndGenerator {
 			w.append("@Setter\n");
 			w.append("public class " + formatText(tableName, true) + "Model { \n\n");
 
-			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
+			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).collect(Collectors.toList());
 
 			if (col.size() == 1) {
 
@@ -1047,7 +1055,7 @@ public class BackEndGenerator {
 
 			} else {
 
-				List<Column> cols1 = columns.stream().filter(x -> !x.getIsPrimaryKey()).toList();
+				List<Column> cols1 = columns.stream().filter(x -> !x.getIsPrimaryKey()).collect(Collectors.toList());
 
 				for (Column column : cols1) {
 					if (column.getIsForeigKey()) {
@@ -1125,7 +1133,7 @@ public class BackEndGenerator {
 			w.append("@Setter\n");
 			w.append("public class " + formatText(tableName, true) + "DTO { \n\n");
 
-			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).toList();
+			List<Column> col = columns.stream().filter(x -> x.getIsPrimaryKey()).collect(Collectors.toList());
 			if (col.size() == 1) {
 
 				// Add properties
@@ -1150,7 +1158,7 @@ public class BackEndGenerator {
 				}
 
 			} else {
-				List<Column> cols = columns.stream().filter(x -> !x.getIsPrimaryKey()).toList();
+				List<Column> cols = columns.stream().filter(x -> !x.getIsPrimaryKey()).collect(Collectors.toList());
 				// Add properties
 				for (Column column : cols) {
 

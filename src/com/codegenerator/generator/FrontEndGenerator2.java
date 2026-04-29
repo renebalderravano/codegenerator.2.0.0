@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import com.codegenerator.connection.JDBCManager;
 import com.codegenerator.generator.template.TemplatePrimeNG;
 import com.codegenerator.util.Column;
+import com.codegenerator.util.DataTypeConverter;
 import com.codegenerator.util.FieldNameFormatter;
 import com.codegenerator.util.FileManager;
 import com.codegenerator.util.PropertiesReading;
@@ -292,18 +293,20 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 				else if (col.getName().endsWith("_id") || col.getName().endsWith("Id"))
 					fkName = col.getName().replace("_id", "").replace("Id", "");
 
-				if(fkName.equals(""))							
+				if (fkName.equals(""))
 					fkName = col.getName();
-				
+
 				Optional<Object[]> fk = tables.stream().filter(tbl -> tbl[1].equals(col.getTableReference()))
 						.findFirst();
 				String schemaFK = fk.get()[0].toString().toLowerCase();
 
 				foreignKeyColumn = FieldNameFormatter.formatText(col.getTableReference(), false);
 
-				if (!foreignKeyColumnOld.equals(foreignKeyColumn) && !FieldNameFormatter.formatText(tableName, false).equals(foreignKeyColumn) ) {
-					importsService.append("import { " + FieldNameFormatter.toPascalCase(col.getTableReference()) + "Service }" 
-							+ " from '../../../../service/"
+				if (!foreignKeyColumnOld.equals(foreignKeyColumn)
+						&& !FieldNameFormatter.formatText(tableName, false).equals(foreignKeyColumn)) {
+
+					importsService.append("import { " + FieldNameFormatter.toPascalCase(col.getTableReference())
+							+ "Service }" + " from '../../../../service/"
 							+ TextUtil.convertToSnakeCase((String) (schemaFK.equals("") ? "" : schemaFK)) + "/"
 							+ FieldNameFormatter.toSnakeCase(col.getTableReference()) + ".service';\n");
 
@@ -312,13 +315,25 @@ public class FrontEndGenerator2 implements IFrontEndGenerator {
 
 				declarationsOption
 						.append("\topts" + FieldNameFormatter.toPascalCase(fkName) + " : any[] | undefined; \n");
+
 				declarationsService.append("private " + FieldNameFormatter.toCamelCase(fkName) + "Service: "
 						+ FieldNameFormatter.toPascalCase(col.getTableReference()) + "Service,\n");
+
 				executionsService.append("	this." + FieldNameFormatter.toCamelCase(fkName)
 						+ "Service.findAll().subscribe((data: any) => {\r\n" + "			this.opts"
 						+ FieldNameFormatter.toPascalCase(fkName) + " = data\r\n" + "	},\r\n"
 						+ "		(error: any) => {\r\n" + "		});\n");
 				i++;
+			}
+		}
+
+		int x = 0;
+		for (Column column : table.getColumns()) {
+			if (DataTypeConverter.sqlserverToJava.get(column.getDataType()).equals("byte[]")) {
+				if (x == 0)
+					importsService.append("import { CommonComponent } from '@/core/services/common.component';\n");
+				declarationsService.append("public commonComponent" + (x == 0 ? "" : x) + " : CommonComponent,\n");
+				x++;
 			}
 		}
 

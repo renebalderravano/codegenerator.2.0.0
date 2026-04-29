@@ -33,7 +33,7 @@ public class JDBCManager {
 
 	public Result<?> connect() {
 		Result<?> result = new Result<>();
-		
+
 		String url = "jdbc:"; // table details
 
 		try {
@@ -49,8 +49,8 @@ public class JDBCManager {
 			setConnection(DriverManager.getConnection(url, getUsername(), getPassword()));
 
 			result.setSuccess(true);
-			result.setMessage("Connection successfull !!!!");			
-			System.out.println("Connection successfull !!!!");			
+			result.setMessage("Connection successfull !!!!");
+			System.out.println("Connection successfull !!!!");
 			return result;
 
 		} catch (ClassNotFoundException | SQLException e) {
@@ -59,17 +59,18 @@ public class JDBCManager {
 		}
 		return result;
 	}
-	
+
 	public Result<?> connect(String database) {
 		Result<?> result = new Result<>();
-		
+
 		String url = "jdbc:";
 
 		try {
 			String prop = getServer().trim() + ".datasource.driver-class-name";
 
 			String driver = PropertiesReading.getProperty(prop);
-			StringBuilder urlDB = new StringBuilder(PropertiesReading.getProperty(getServer() + ".datasource.url.databasename"));
+			StringBuilder urlDB = new StringBuilder(
+					PropertiesReading.getProperty(getServer() + ".datasource.url.databasename"));
 
 			url = urlDB.toString().replace("?1", getHost()).replace("?2", getPort()).replace("?3", database);
 
@@ -78,8 +79,8 @@ public class JDBCManager {
 			setConnection(DriverManager.getConnection(url, getUsername(), getPassword()));
 
 			result.setSuccess(true);
-			result.setMessage("Connection successfull to DB: "+database+" !!!!");			
-			System.out.println("Connection successfull to DB: "+database+" !!!!");			
+			result.setMessage("Connection successfull to DB: " + database + " !!!!");
+			System.out.println("Connection successfull to DB: " + database + " !!!!");
 			return result;
 
 		} catch (ClassNotFoundException | SQLException e) {
@@ -113,7 +114,7 @@ public class JDBCManager {
 		}
 		return dbs;
 	}
-	
+
 	public List<Table> getTableWithSchemaFromDataBase(String database) {
 		List<Table> tables = new ArrayList<Table>();
 		Statement st;
@@ -132,8 +133,8 @@ public class JDBCManager {
 			while (rs.next()) {
 				Table table = new Table();
 				String schema = rs.getString("table_schema"); // Retrieve schema from db
-				table.setSchema(schema);				
-				String name = rs.getString("table_name"); // Retrieve name from db				
+				table.setSchema(schema);
+				String name = rs.getString("table_name"); // Retrieve name from db
 				table.setName(name);
 				tables.add(table);
 			}
@@ -145,7 +146,6 @@ public class JDBCManager {
 		}
 		return tables;
 	}
-
 
 	public List<String> getTableFromDataBase(String database) {
 		List<String> tables = new ArrayList<String>();
@@ -185,7 +185,7 @@ public class JDBCManager {
 			query = query.replace("?1", database);
 			query = query.replace("?2", tableName);
 			st = getConnection().createStatement();
-			ResultSet rs = st.executeQuery(query); 
+			ResultSet rs = st.executeQuery(query);
 			while (rs.next()) {
 				Column column = new Column();
 				column.setName(rs.getString("COLUMN_name"));
@@ -194,23 +194,21 @@ public class JDBCManager {
 				column.setNumericScale(rs.getInt("NUMERIC_SCALE"));
 				column.setIsNullable(rs.getString("is_nullable").equals("YES"));
 				column.setLength(rs.getInt("CHARACTER_MAXIMUM_LENGTH"));
-				if (rs.getString("column_key") != null) {
-					column.setIsPrimaryKey(rs.getString("column_key").equals("PRI"));
-					column.setIsForeignKey(rs.getString("column_key").equals("MUL"));
-					column.setIsUnique(rs.getString("column_key").equals("UNI"));
-				}
-				
-//				column.setName(rs.getString("column_name"));
-//				column.setDataType(rs.getString("data_type"));
-//				column.setIsNullable(rs.getBoolean("is_nullable"));	
-//				column.setIsNullable(rs.getBoolean("AutoIncrement"));
-//				column.setIsPrimaryKey(rs.getBoolean("IsPrimaryKey"));
-//				column.setIsForeignKey(rs.getBoolean("IsForeignKey"));
+//				if (rs.getString("column_key") != null) {
+//					column.setIsPrimaryKey(rs.getString("column_key").equals("PRI"));
+//					column.setIsForeignKey(rs.getString("column_key").equals("MUL"));
+//					column.setIsUnique(rs.getString("column_key").equals("UNI"));
+//				}
+
+				column.setIsPrimaryKey(rs.getBoolean("IS_PRIMARY_KEY"));
+				column.setIsForeignKey(rs.getBoolean("IS_FOREIGN_KEY"));
+				column.setIsUnique(rs.getBoolean("IS_UNIQUE_KEY"));
+
 				column.setTableReference(rs.getString("ORDINAL_POSITION"));
 				column.setTableReference(rs.getString("REFERENCED_TABLE"));
 				columns.add(column);
 			}
-			st.close(); 
+			st.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

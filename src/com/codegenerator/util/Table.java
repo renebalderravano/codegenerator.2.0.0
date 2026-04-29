@@ -8,6 +8,7 @@ public class Table {
 	private String name;
 	private List<Column> columns;
 
+	
 	public Table() {
 		// TODO Auto-generated constructor stub
 	}

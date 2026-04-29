@@ -5,6 +5,7 @@ import java.util.Map;
 
 public class DataTypeConverter {
 
+	@SuppressWarnings("serial")
 	public static Map<String, String> mysqlToJava = new HashMap<String, String>() {
 		{
 			put("bit", "Boolean");
@@ -37,6 +38,7 @@ public class DataTypeConverter {
 		}
 	};
 
+	@SuppressWarnings("serial")
 	public static Map<String, String> sqlserverToJava = new HashMap<String, String>() {
 		{
 			put("bit", "Boolean");
@@ -64,11 +66,13 @@ public class DataTypeConverter {
 			put("smalldatetime", "java.sql.Timestamp");
 			put("datetime", "java.sql.Timestamp");
 			put("datetime2", "java.sql.Timestamp");
+			put("timestamp", "java.sql.Timestamp");
 
 		}
 	};
 
-	HashMap<String, String> sqlServerToTypscript = new HashMap<>() {
+	@SuppressWarnings("serial")
+	HashMap<String, String> sqlServerToTypscript = new HashMap<String, String>() {
 		{
 			put("int", "number");
 			put("bigint", "number");
